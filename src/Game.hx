@@ -24,9 +24,8 @@ class Game extends dn.Process {//}
 
 	public var wrapper : h2d.Layers;
 	var world		: World;
-	// var lib			: SpriteLib;
 	var player		: Entity;
-	// var displace	: flash.display.BitmapData;
+	// var displace	: flash.display.BitmapData; // TODO
 	var dispScale	: Float;
 
 	var onArrive	: Null<Void->Void>;
@@ -40,10 +39,10 @@ class Game extends dn.Process {//}
 	var footstep	: Float;
 
 	// var menu		: Null<flash.display.Sprite>;
-	// var popUp		: Null<flash.display.Sprite>;
+	var popUp		: Null<h2d.Flow>;
 	// var dragStart	: Null<flash.geom.Point>;
 	// var drag		: flash.display.Sprite;
-	// var curName		: Null<flash.text.TextField>;
+	var curName		: Null<h2d.Text>;
 	// var roomBg		: DSprite;
 	// var snapshot	: flash.display.Bitmap;
 	// var invCont		: flash.display.Sprite;
@@ -203,13 +202,13 @@ class Game extends dn.Process {//}
 
 		Assets.SOUNDS.ambiant().play(true);
 
-		#if !debug
+		// #if !debug
 		// Intro
 		root.alpha = 0;
-		tw.create(root, "alpha", 1, 2000);
+		tw.createMs(root.alpha, 1, 2000);
 		dispScale = 0.5;
-		tw.create(this, "dispScale", 0, TEaseOut, 5000);
-		player.spr.playAnim("wakeWait");
+		tw.createMs(this.dispScale, 0, TEaseOut, 5000);
+		player.spr.anim.play("wakeWait");
 		player.moveTo(10,4);
 		player.update();
 		pop("Day 4380");
@@ -218,22 +217,22 @@ class Game extends dn.Process {//}
 		pop("My cozy little world.");
 		afterPop = function() {
 			fl_pause = true;
-			player.spr.playAnim("wakeUp", 1);
-			player.spr.onEndAnim = function() player.spr.playAnim("standDown");
-			var a = tw.create(player, "yr", 1, 300);
+			player.spr.anim.play("wakeUp", 1);
+			player.spr.anim.onEnd( ()->player.spr.anim.play("standDown") );
+			var a = tw.createMs(player.yr, 1, 300);
 			a.onUpdate = function() {
-				DSprite.updateAll();
+				// DSprite.updateAll();
 				player.update();
 			}
 			a.onEnd = function() {
-				unpause();
-				SOUNDS.footstep1.play();
+				resumeGame();
+				Assets.SOUNDS.footstep1(1);
 				player.moveTo(10,5);
 				player.yr = 0;
 				player.update();
 			}
 		}
-		#end
+		// #end
 	}
 
 
@@ -269,24 +268,22 @@ class Game extends dn.Process {//}
 			tf.maxWidth = 128;
 		return tf;
 	}
-	/*
+
+	function resumeGame() {
+		fl_pause = false;
+		lockControls(false);
+		// if( curName!=null ) // TODO
+		// 	curName.visible = true;
+	}
 
 	function lockControls(l) {
 		fl_lockControls = l;
 		controlsCont.alpha = l ? 0.3 : 1;
-		//invCont.alpha = l ? 0.4 : 1;
-		//invSep.alpha = invCont.alpha;
-		//invSep2.alpha = invCont.alpha;
-		updateInventory();
+		// updateInventory(); // TODO
 	}
 
-	function unpause() {
-		fl_pause = false;
-		lockControls(false);
-		if( curName!=null )
-			curName.visible = true;
-	}
 
+	/*
 
 	function setPending(?a:String) {
 		//if( fl_pause )
@@ -1431,6 +1428,7 @@ class Game extends dn.Process {//}
 		tf.filters = [ new flash.filters.GlowFilter(0x0,1, 4,4, 10) ];
 		return tf;
 	}
+	*/
 
 	function closePop(?nextQueue=true) {
 		if( popUp!=null ) {
@@ -1473,37 +1471,34 @@ class Game extends dn.Process {//}
 		lockControls(true);
 		if( curName!=null )
 			curName.visible = false;
-		//closeActions();
 		closePop(false);
-		var s = new flash.display.Sprite();
+
+		var f = new h2d.Flow();
+		wrapper.add(f,2);
+
 		var tf = makeText(str, true);
 		tf.textColor = tcol;
 		tf.x+= 10;
 		tf.y+= 10;
-		tf.filters = [];
-		s.addChild(tf);
-		var g = s.graphics;
-		g.beginFill(col, 1);
-		g.drawRect(0,0, tf.textWidth*tf.scaleX+25, tf.textHeight*tf.scaleX+25);
-		s.filters = [
-			new flash.filters.GlowFilter(0xffffff,1, 4,4, 10,1, true),
-			new flash.filters.GlowFilter(0x0,1, 4,4, 10),
-		];
-		dm.add(s,2);
+		f.addChild(tf);
 
-		s.x = Std.random(100) + 16*2*UPSCALE;
-		if( s.x<5 ) s.x = 5;
-		if( s.x+s.width+5>=WID ) s.x = WID-s.width-5;
+		f.backgroundTile = h2d.Tile.fromColor(col);
+		f.padding = 4;
 
-		s.y = if( player.cy>=6 ) Std.random(30)+20 else Std.random(30)+CHEI*6*UPSCALE;
-		if( s.y<5 ) s.y = 5;
-		if( s.y+s.height+5>=HEI) s.y = HEI-s.height-5;
+		f.x = Std.random(100) + 16*2*Const.SCALE;
+		if( f.x<5 ) f.x = 5;
+		if( f.x+f.outerWidth+5>=w() ) f.x = w()-f.outerWidth-5;
+
+		f.y = if( player.cy>=6 ) Std.random(30)+20 else Std.random(30) + Const.GRID*6*Const.SCALE;
+		if( f.y<5 ) f.y = 5;
+		if( f.y+f.outerHeight+5>=h()) f.y = h()-f.outerHeight-5;
 
 		fl_pause = true;
-		popUp = s;
+		popUp = f;
 	}
 
 
+	/*
 	function main(_) {
 		skipClick = false;
 		tw.update();
