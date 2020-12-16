@@ -1,4 +1,4 @@
-import hxd.Key;
+import World;
 
 class Main extends dn.Process {
 	public static var ME : Main;
