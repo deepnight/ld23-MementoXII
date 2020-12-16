@@ -2,18 +2,18 @@ import dn.heaps.slib.*;
 
 class Entity {
 	var world	: World;
-	var cx		: Int;
-	var cy		: Int;
-	var xr		: Float;
-	var yr		: Float;
+	public var cx		: Int;
+	public var cy		: Int;
+	public var xr		: Float;
+	public var yr		: Float;
 
-	var dx		: Float;
-	var dy		: Float;
+	public var dx		: Float;
+	public var dy		: Float;
 
-	var dirY	: Int;
-	var spr		: HSprite;
+	public var dirY	: Int;
+	public var spr		: HSprite;
 
-	function new(w, s) {
+	public function new(w, s) {
 		world = w;
 		spr = s;
 		cx = cy = 2;
@@ -22,21 +22,21 @@ class Entity {
 		dirY = 1;
 	}
 
-	function moveTo(x,y) {
+	public function moveTo(x,y) {
 		cx = x;
 		cy = y;
 		xr = 0.5;
 		yr = 0.5;
 	}
 
-	function lookAt(x,y) {
+	public function lookAt(x,y) {
 		if( y>=cy )
 			dirY = 1;
 		else
 			dirY = -1;
 	}
 
-	function update() {
+	public function update() {
 		// Y
 		if( yr+dy>1 && world.collide(cx,cy+1) ) {
 			yr = 1;
