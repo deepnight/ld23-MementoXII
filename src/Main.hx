@@ -45,7 +45,7 @@ class Main extends dn.Process {
 
 		#if js
 		// Optional helper that shows a "Click to start/continue" message when the game looses focus
-		new dn.heaps.GameFocusHelper(Boot.ME.s2d, Assets.fontMedium);
+		// new dn.heaps.GameFocusHelper(Boot.ME.s2d, Assets.fontMedium);
 		#end
 
 		// Start with 1 frame delay, to avoid 1st frame freezing from the game perspective
