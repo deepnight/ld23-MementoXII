@@ -22,7 +22,7 @@ class Manager {//}
 	static var INAMES = new Hash();
 	static var SOUNDS = mt.data.Sounds.directory("sfx");
 	static var EXTENDED = true;
-	
+
 	//static var WALK = "Walk to";
 	static var LOOK = "Look at";
 	static var PICK = "Pick up";
@@ -33,7 +33,7 @@ class Manager {//}
 	static var REMEMBER = "Remember";
 	static var HELP = "Help me";
 	static var ABOUT = "About";
-	
+
 	static var FORMAT : flash.text.TextFormat;
 	public static var WID = Std.int(flash.Lib.current.stage.stageWidth);
 	public static var HEI = Std.int(flash.Lib.current.stage.stageHeight);
@@ -43,11 +43,11 @@ class Manager {//}
 	public static var UPSCALE = 3;
 	public static var USE_SCALE2X = false;
 	public static var UNIQ = 0;
-	
+
 	#if debug
 	var debug		: mt.kiroukou.debug.Stats;
 	#end
-	
+
 	var root		: flash.display.MovieClip;
 	var buffer		: Buffer;
 	var buffer2		: Buffer;
@@ -76,26 +76,26 @@ class Manager {//}
 	var controlsCont: flash.display.Sprite;
 	var heroFade	: DSprite;
 	var footstep	: Float;
-	
+
 	var tw			: Tweenie;
-	
+
 	var popQueue	: List<String>;
-	
+
 	var hotSpots	: Array<Hotspot>;
-	
+
 	var playerPath	: Array<{x:Int, y:Int}>;
 	var playerTarget: Null<{x:Int, y:Int}>;
-	
+
 	var fl_pause	: Bool;
 	var fl_lockControls	: Bool;
 	var fl_ending	: Bool;
 	var skipClick	: Bool;
-	
+
 	var room		: String;
-	
+
 	var dm			: mt.DepthManager;
-	
-		
+
+
 	public function new(r) {
 		ME = this;
 		root = r;
@@ -113,12 +113,12 @@ class Manager {//}
 		popQueue = new List();
 		dispScale = 0;
 		footstep = 0;
-		
+
 		var g = root.graphics;
 		g.beginFill(#if debug 0x0 #else 0x0 #end,1);
 		g.drawRect(0,0,WID,HEI);
 		g.endFill();
-		
+
 		INAMES.set("picture", "Old photograph");
 		INAMES.set("picPart1", "photograph fragment (1)");
 		INAMES.set("picPart2", "photograph fragment (2)");
@@ -132,7 +132,7 @@ class Manager {//}
 		INAMES.set("finalLetter", "A letter");
 
 		dm = new mt.DepthManager(root);
-		
+
 		room = "cell";
 		#if debug
 		room = "park";
@@ -149,7 +149,7 @@ class Manager {//}
 		//triggers.set("sinkClean",1);
 		//triggers.set("sinkOpen",1);
 		#end
-		
+
 		FORMAT = new flash.text.TextFormat("04b03", 8, 0xffffff);
 
 		buffer = new Buffer(110,108, UPSCALE, false, 0x0, USE_SCALE2X);
@@ -157,30 +157,30 @@ class Manager {//}
 		//var t = Buffer.makeMosaic(UPSCALE);
 		var t = Buffer.makeScanline(0x0, UPSCALE);
 		buffer.setTexture( t, 0.07, flash.display.BlendMode.OVERLAY, false );
-		
+
 		buffer2 = new Buffer(buffer.width,180, UPSCALE, true, 0x0, USE_SCALE2X);
 		dm.add(buffer2.render,0);
 		buffer2.setTexture( t, 0.07, flash.display.BlendMode.OVERLAY, true );
-		
+
 		haxe.Log.setColor(0xFFFF00);
-		
+
 		drag = buffer.dm.empty(99);
-		
+
 		Key.init();
-		
+
 		lib = new SpriteLib( new GfxTiles(0,0) );
 		lib.defaultCenterX = 0;
 		lib.defaultCenterY = 0;
 
 		lib.setGroup("collision");
 		lib.slice(0,16*2, 8,8);
-		
+
 		lib.setGroup("separator");
 		lib.slice(0,16*3, 16*7,16, 2);
 
 		lib.setGroup("cell");
 		lib.slice(0,16*4, 16*7,16*5, 1, 4);
-		
+
 		lib.setGroup("picPart1");
 		lib.slice(7*16,5*16, 16,16);
 		lib.setGroup("calendar");
@@ -207,7 +207,7 @@ class Manager {//}
 		lib.slice(7*16,13*16, 16,16, 2);
 		lib.setGroup("cupDoors");
 		lib.slice(8*16,10*16, 16,20);
-		
+
 		lib.setGroup("phone");
 		lib.slice(7*16,15*16, 16,16);
 		lib.setGroup("finalLetter");
@@ -225,7 +225,7 @@ class Manager {//}
 		lib.setAnim("cry", [15,16, 17,18, 19], [20,70, 10,50, 100]);
 		lib.setAnim("cry", [15,16, 17,18, 19], [5,5,5,5, 50]);
 		lib.setAnim("afterCry", [20], [1]);
-		
+
 		lib.setGroup("heroFade");
 		lib.slice(0,16*25, 12*16, 9*16);
 
@@ -241,15 +241,15 @@ class Manager {//}
 		//for(x in 0...Std.int(buffer.width/16)+1)
 			//for(y in 0...Std.int(buffer.height/16)+1)
 				//lib.drawIntoBitmap(waterText.bitmapData, x*16, y*16, "water");
-		
+
 		initWorld();
-		
+
 		player = new Entity(world, lib.getSprite("player"));
 		player.spr.setCenter(0, 0);
 		player.spr.setCenter(0.5, 0.95);
 		player.moveTo(10,5);
 		buffer.dm.add(player.spr, 5);
-		
+
 		var s = lib.getSprite("separator", 1);
 		buffer2.dm.add(s, 3);
 		invSep2 = s;
@@ -262,18 +262,18 @@ class Manager {//}
 		root.stage.addEventListener(flash.events.MouseEvent.CLICK, onClick);
 		root.stage.addEventListener(flash.events.MouseEvent.MOUSE_DOWN, onMouseDown);
 		root.stage.addEventListener(flash.events.MouseEvent.MOUSE_UP, onMouseUp);
-		
+
 		#if debug
 		debug = new mt.kiroukou.debug.Stats();
 		debug.x = WID-70;
 		dm.add(debug,10);
 		#end
-		
+
 		heroFade = lib.getSprite("heroFade");
 		heroFade.setCenter(0.5, 0.5);
 		heroFade.visible = false;
 		buffer.dm.add(heroFade, 5);
-		
+
 		var x = 0;
 		var y = 0;
 		controlsCont = new flash.display.Sprite();
@@ -324,7 +324,7 @@ class Manager {//}
 			}
 			actions.add(tf);
 		}
-		
+
 		//var tf = makeText("Stuck? Need help?");
 		//tf.scaleX = tf.scaleY = 1;
 		//controlsCont.addChild(tf);
@@ -332,14 +332,14 @@ class Manager {//}
 		//tf.y = 16*5*UPSCALE + y*17;
 		//tf.alpha = 0.6;
 		//tf.filters = [];
-		
+
 		setPending();
-		
+
 		addHotSpots();
 		updateInventory();
-		
+
 		SOUNDS.ambiant.play(0,9999);
-		
+
 		#if !debug
 		// Intro
 		root.alpha = 0;
@@ -375,7 +375,7 @@ class Manager {//}
 		}
 		#end
 	}
-	
+
 	function lockControls(l) {
 		fl_lockControls = l;
 		controlsCont.alpha = l ? 0.3 : 1;
@@ -384,15 +384,15 @@ class Manager {//}
 		//invSep2.alpha = invCont.alpha;
 		updateInventory();
 	}
-	
+
 	function unpause() {
 		fl_pause = false;
 		lockControls(false);
 		if( curName!=null )
 			curName.visible = true;
 	}
-	
-	
+
+
 	function setPending(?a:String) {
 		//if( fl_pause )
 			//return;
@@ -421,7 +421,7 @@ class Manager {//}
 				tf.filters = [ new flash.filters.GlowFilter(0x5E6F93,1, 4,4, 10) ];
 			}
 	}
-	
+
 	function movePlayer(cx,cy) {
 		var pt = getClosest(cx,cy);
 		if( pt==null || pt.x==player.cx && pt.y==player.cy )
@@ -430,7 +430,7 @@ class Manager {//}
 		playerTarget = {x:cx,y:cy}
 		return playerPath.length>0;
 	}
-	
+
 	function setTrigger(k, ?n=1) {
 		triggers.set(k,n);
 		refreshWorld();
@@ -451,18 +451,18 @@ class Manager {//}
 			return false;
 		}
 	}
-	
+
 	function hasItem(k) {
 		for(i in inventory)
 			if(i==k)
 				return true;
 		return false;
 	}
-	
+
 	function removeItem(k:String) {
 		inventory.remove(k);
 		updateInventory();
-	
+
 	}
 	function addItem(k:String) {
 		SOUNDS.pick.play();
@@ -479,25 +479,25 @@ class Manager {//}
 		}
 		updateInventory();
 	}
-	
+
 	function updateInventory() {
 		var old = if( invCont!=null ) invCont.alpha else 0;
 		if( invCont!=null )
 			invCont.parent.removeChild(invCont);
-			
+
 		invCont = new flash.display.Sprite();
 		invCont.x = 20;
 		invCont.y = 116*UPSCALE;
 		invCont.alpha = old;
 		dm.add(invCont, 1);
-		
+
 		var a = if( inventory.length==0 ) 0.3 else 1;
 		//invCont.alpha = invSep.alpha = invSep2.alpha = a;
 		tw.create(invCont, "alpha", a);
 		tw.create(invSep, "alpha", a);
 		tw.create(invSep2, "alpha", a);
 		invSep2.y = invSep.y + Math.max(20, 14+inventory.length*6);
-			
+
 		var n = 1;
 		for(i in inventory) {
 			var name = INAMES.get(i);
@@ -517,7 +517,7 @@ class Manager {//}
 			n++;
 		}
 	}
-	
+
 	function runPending(hs:Hotspot) {
 		if( fl_pause )
 			return;
@@ -525,12 +525,12 @@ class Manager {//}
 			return;
 		if( pending==null )
 			return;
-			
+
 		var a = pending;
-		
+
 		if( !hs.act.exists(a) )
 			a = "all";
-		
+
 		if( hs.act.exists(a) ) {
 			var resolve = function() {
 				var r = hs.act.get(a);
@@ -559,36 +559,36 @@ class Manager {//}
 				case CLOSE	: pop("What?");
 				case USE	: pop("I have no use for that.");
 				case REMEMBER: pop("This doesn't ring a bell...");
-				
+
 			}
 		}
 	}
-	
-	
+
+
 	function getClosest(cx,cy) {
 		//if( !world.collide(cx,cy) )
 			//return {x:cx, y:cy}
-		
+
 		for( dist in 1...4)
 			for( d in [{x:0,y:dist}, {x:-dist,y:0}, {x:dist,y:0}, {x:0,y:-dist} ] )
 				if( !world.collide(cx+d.x, cy+d.y) )
 					return {x:cx+d.x, y:cy+d.y}
-					
+
 		for( dist in 1...4)
 			for( d in [{x:-dist,y:-dist}, {x:dist,y:-dist}, {x:dist,y:dist}, {x:-dist,y:dist}, ] )
 				if( !world.collide(cx+d.x, cy+d.y) )
 					return {x:cx+d.x, y:cy+d.y}
-					
+
 		return null;
 	}
-	
+
 	public function getPath(x:Int,y:Int, tx:Int,ty:Int) {
 		if ( world.collide(x,y) || world.collide(tx,ty) )
 			return [];
 		else
 			return astar(x,y, tx,ty);
 	}
-	
+
 	function astar(x,y, tx,ty, ?branch:Array<{x:Int,y:Int}>, ?tags:Array<Bool>, ?best:Array<{x:Int,y:Int}>, ?tries=0) : Array<{x:Int,y:Int}> {
 		if ( branch==null )
 			branch = new Array();
@@ -599,16 +599,16 @@ class Manager {//}
 		tags[getId(x,y)] = true;
 		if (x==tx && y==ty)
 			return branch;
-			
+
 		if( tries>1000)
 			return null;
-			
+
 		var neig = new Array();
 		if (tx<x)	neig.insert(0, { xd:-1,yd:0 } )	else neig.push( { xd:-1,yd:0 } );
 		if (tx>x)	neig.insert(0, { xd:1,yd:0 } )	else neig.push( { xd:1,yd:0 } );
 		if (ty<y)	neig.insert(0, { xd:0,yd:-1 } )	else neig.push( { xd:0,yd:-1 } );
 		if (ty>y)	neig.insert(0, { xd:0,yd:1 } )	else neig.push( { xd:0,yd:1 } );
-		
+
 		for (n in neig) {
 			var pt = { x:x+n.xd, y:y+n.yd };
 			var id = getId(pt.x, pt.y);
@@ -625,7 +625,7 @@ class Manager {//}
 	inline function getId(x,y) {
 		return y*world.wid + x;
 	}
-	
+
 /*	function getPath(x,y, tx,ty, ?mark:IntHash<Bool>) {
 		var id = getId(x,y);
 		if( mark==null )
@@ -639,10 +639,10 @@ class Manager {//}
 				//next.push({x:fx+d.x, y:fy+d.y});
 		}
 		mark.set(id, true);
-		
+
 		//if( !world.collide(fx-1, fy) ) next.push({x:x-1, y
 	}*/
-	
+
 	function addHotSpots() {
 		for(hs in hotSpots) {
 			hs.hit.parent.removeChild(hs.hit);
@@ -650,20 +650,20 @@ class Manager {//}
 				hs.spr.parent.removeChild(hs.spr);
 		}
 		hotSpots = new Array();
-		
+
 		if( room!="hell" ) {
 			addSpot(16,27,26,7, "A rusty pipe");
 			setAction(LOOK, "It brings me my daily water ration.");
 			setAction(REMEMBER, "For as long I remember, water has always seeped out of this pipe.");
 			setAction(USE, "It's useless, I can't fix it.");
-			
+
 			addSpot(9,39,7,17, "Iron door");
 			setAction(LOOK,"12 years already... Once a day, they serve my food in a metal tray.");
 			setAction(OPEN,"Guess what? It's locked.");
 			setAction(CLOSE,"This door seems to be intended to remain closed for the rest of eternity.");
 			setAction(PICK, "What?");
 			setAction(REMEMBER,"This door was locked 12 years ago. Only once. Never opened since then. I can't even remember the color of the corridor walls behind.");
-			
+
 			addSpot(73,26,21,14, "My bed");
 			setAction(LOOK, "It is almost as hard as the concrete ground.");
 			setAction(USE, "No, I just woke up. ");
@@ -675,7 +675,7 @@ class Manager {//}
 				});
 			}
 		}
-			
+
 		if( room=="cell" ) {
 			addSpot(49,25,14,14, "Steel table");
 			setAction(LOOK, "Despite its aspect, this table isn't very stable.|But as everything down here, with time, you get used to it.");
@@ -697,7 +697,7 @@ class Manager {//}
 					addItem("picPart1");
 				});
 			}
-			
+
 			if( !hasTrigger("framed") ) {
 				addSpot(52,22,5,6, "Empty frame");
 				if( hasTrigger("gotPicture") )
@@ -727,17 +727,17 @@ class Manager {//}
 						changeRoom("kitchen");
 				});
 			}
-			
+
 			addSpot(20,32,20,19, "Stagnant water");
 			setAction(LOOK, "The water slowly seeps through cracks into my world.");
 			setAction(CLOSE, "I can't do anything to stop it.");
 			setAction(PICK, "I will have plenty of water here soon enough.");
-			
+
 			addSpot(70,51,16,14, "Ray of light");
 			setAction(LOOK, "A cold light falls upon my little world.");
 			setAction(REMEMBER, "I won't feel anymore the sea breeze in my hairs.");
 			setAction(PICK, "What?");
-			
+
 			if( !hasTrigger("calendar") ) {
 				addSpot(40,20,8,9, "An old calendar");
 				setSprite( lib.getSprite("calendar") );
@@ -763,12 +763,12 @@ class Manager {//}
 				setAction(CLOSE, "The calendar won't stay.");
 				setAction(REMEMBER, "Did I make this hole? I can't remember.");
 			}
-			
+
 			addSpot(59,61,21,13, "Unused bed base");
 			setAction(LOOK, "It was never used. No one never got transfered in this cell, except me.");
 			setAction(USE, "From time to time, I switch my beds. Just for a pleasant change.");
 			setAction(REMEMBER, "I think it was already here when I was brought here.");
-			
+
 			if( !hasItem("picPart3") && !hasTrigger("gotPicture") ) {
 				addSpot(88,25,5,6, "Some sort of paper");
 				setSprite( lib.getSprite("picPart3") );
@@ -779,11 +779,11 @@ class Manager {//}
 					addItem("picPart3");
 				});
 			}
-			
+
 			addSpot(56,39,7,9, "Chair");
 			setAction(LOOK, "Rusted.");
 			setAction(USE, "There is nothing to wait.");
-			
+
 			addSpot(14,64,8,12, "Sink");
 			if( hasTrigger("sinkOpen") ) {
 				var s = lib.getSprite("sinkWater");
@@ -831,7 +831,7 @@ class Manager {//}
 					SOUNDS.success.play();
 					addItem("cupKey");
 				});
-				
+
 			addSpot(89,41,6,6, "Small wooden case");
 			if( hasTrigger("ringBack") ) {
 				var s = setSprite( lib.getSprite("ringBack") );
@@ -854,8 +854,8 @@ class Manager {//}
 					setTrigger("ringBack");
 				});
 		}
-		
-		
+
+
 		if( room=="kitchen" ) {
 			addSpot(49,20,5,6, "Old picture of a woman");
 			setAction(LOOK, "A young and beautiful smiles at you, radiant with joy.");
@@ -865,7 +865,7 @@ class Manager {//}
 				if( EXTENDED )
 					afterPop = callback(changeRoom,"cell");
 			});
-			
+
 			addSpot(42,29,8,6, "Sideboard left door");
 			if( hasTrigger("kitchenLeftOpen") ) {
 				setSprite( lib.getSprite("kitchenDoor") );
@@ -874,7 +874,7 @@ class Manager {//}
 			}
 			setAction(OPEN, function() setTrigger("kitchenLeftOpen",1));
 			setAction(CLOSE, function() setTrigger("kitchenLeftOpen",0));
-			
+
 			addSpot(70,51,12,13, "Warm ray of light");
 			setAction(LOOK, "The warm feeling if pleasant and reassuring.");
 			setAction(REMEMBER, "The kitchen used to be a room bathed in light.|I guess it's summer outside.");
@@ -898,20 +898,20 @@ class Manager {//}
 			}
 			setAction(OPEN, function() setTrigger("kitchenRightOpen",1));
 			setAction(CLOSE, function() setTrigger("kitchenRightOpen",0));
-			
+
 			addSpot(42,47,6,13, "My chair");
 			setAction(LOOK, "My good old chair.");
 			setAction(REMEMBER, "Years ago, I used to sit here, and wait for...|Well. something... I don'k know.|!But nothing ever happened.");
 			setAction(USE, "Nah, I've spent too much time on this chair, at home...");
-			
+
 			addSpot(25,45,16,22, "Kitchen table");
 			setAction(LOOK, "My sturdy kitchen table.|It will last longer than me.");
 			setAction(REMEMBER, "Years ago, I used to sit here, and wait for...|Well. something... I don'k know.|!But nothing ever happened.");
-			
+
 			addSpot(18,24,8,14, "Lydia's chair");
 			setAction(LOOK, "Nice chair");
 			setAction(REMEMBER, "After Lydia's death, this chair stood in the corner of my kitchen.");
-			
+
 			if( !hasTrigger("rememberTable") ) {
 				addSpot(31,48,10,13, "Tablecloth");
 				setSprite( lib.getSprite("kitchenTable", 0) );
@@ -948,7 +948,7 @@ class Manager {//}
 					});
 				}
 			}
-			
+
 			if( hasTrigger("foundChest") ) {
 				addSpot(40,34,13,11, "A steel chest");
 				setSprite( lib.getSprite("kitchenChest", hasTrigger("openChest") ? 1 : 0) );
@@ -995,7 +995,7 @@ class Manager {//}
 			setAction(LOOK, "It only has one prong left.");
 			addSpot(31,50,4,4, "Spoon");
 			setAction(LOOK, "Surprisingly, it's in a good state.");
-			
+
 			if( !hasItem("knife") ) {
 				addSpot(25,48,6,6, "Knife");
 				setSprite( lib.getSprite("kitchenKnife") );
@@ -1006,7 +1006,7 @@ class Manager {//}
 					addItem("knife");
 				});
 			}
-			
+
 			addSpot(86,53,12,25, "Cupboard");
 			if( hasTrigger("openCup") ) {
 				setSprite( lib.getSprite("cupDoors") ).x-=4;
@@ -1049,26 +1049,26 @@ class Manager {//}
 				}
 			}
 		}
-		
+
 		if( room=="park" ) {
 			addSpot(2,8,41,26, "Leaves");
 			setAction(LOOK, "A peaceful leafy tree...");
 			setAction(REMEMBER, "I wish I could hear the gentle sound of the wind passing through the leaves...|!But there is no wind here.");
-			
+
 			addSpot(50,23,23,14, "Wooden bench");
 			setAction(LOOK, "Even if it seems as old as the trees, this bench looks welcoming.");
 			setAction(REMEMBER, "Isn't that...|..the bench where I met Lydia?");
 			setAction(USE, "!I.. don't feel comfortable with sitting on it.|I can't do it.");
-			
+
 			addSpot(71,50,14,14, "Pale ray of light");
 			setAction(LOOK, "It feels surprisingly cold.");
 			setAction(REMEMBER, "!This light is not exactly pleasant.|I guess it's winter outside.");
-			
+
 			addSpot(16,32,8,25, "Tree trunk");
 			setAction(LOOK, "Things are engraved in it.|\"Forever\"|\"L & D\"|\"With love\"|...");
 			setAction(REMEMBER, "I think I've written most of these words.");
 			setAction(USE, "I could shake the branches, but the trunk won't move.");
-			
+
 			if( hasTrigger("letterPop") && !hasItem("finalLetter") ) {
 				addSpot(69,41,7,7, "A letter");
 				setSprite( lib.getSprite("finalLetter") );
@@ -1091,7 +1091,7 @@ class Manager {//}
 				setAction(USE, f);
 				setAction(OPEN, f);
 			}
-			
+
 			if( !hasTrigger("phoneDropped") ) {
 				addSpot(18,25,7,6, "???");
 				setSprite( lib.getSprite("phone") );
@@ -1132,12 +1132,12 @@ class Manager {//}
 					setAction(USE, "!It seems broken or something.");
 			}
 		}
-		
+
 		if( room=="hell" ) {
-			
+
 		}
 	}
-	
+
 	function addSpot(x,y,w,h, name:String) {
 		var hs : Hotspot = {
 			hit		: null,
@@ -1146,7 +1146,7 @@ class Manager {//}
 			act		: new Hash(),
 		}
 		hotSpots.push(hs);
-		
+
 		var pt = buffer.localToGlobal(x,y);
 		var hit = new flash.display.Sprite();
 		dm.add(hit,1);
@@ -1157,24 +1157,24 @@ class Manager {//}
 		g.beginFill(0x00ff00, 0.);
 		g.drawRect(0,0, w*UPSCALE, h*UPSCALE);
 		g.endFill();
-		
+
 		hit.addEventListener(flash.events.MouseEvent.CLICK, function(e) {
 			runPending(hs);
 		});
 		hit.addEventListener(flash.events.MouseEvent.MOUSE_OVER, function(_) {
 			//hit.alpha = 0.1;
 			showName(name);
-			
+
 		});
 		hit.addEventListener(flash.events.MouseEvent.MOUSE_OUT, function(_) {
 			//hit.alpha = 0;
 			hideName();
 		});
-		
+
 		lastSpot = hs;
 		return hs;
 	}
-	
+
 	function getTip() {
 		SOUNDS.help.play();
 		var tip =
@@ -1211,7 +1211,7 @@ class Manager {//}
 		else
 			pop("!I can't help you right now, sorry. It's up to you!");
 	}
-	
+
 	function changeRoom(k:String) {
 		var from = room;
 		var d = #if debug 1000; #else 5000; #end
@@ -1224,7 +1224,7 @@ class Manager {//}
 		tw.create(snapshot, "alpha", 0, TEaseIn, d*0.8).onEnd = function() {
 			snapshot.bitmapData.dispose();
 		}
-		
+
 		var onTeleport = null;
 		room = k;
 		switch( k ) {
@@ -1283,7 +1283,7 @@ class Manager {//}
 			case "hell" :
 				player.moveTo(10,6);
 		}
-		
+
 		SOUNDS.teleport.play();
 		initWorld();
 		player.world = world;
@@ -1291,7 +1291,7 @@ class Manager {//}
 		playerTarget = null;
 		onArrive = null;
 		lockControls(true);
-		
+
 		tw.create(this, "dispScale", 1, TEaseIn, d*0.6).onEnd = function() {
 			tw.create(this, "dispScale", 0.3, TEaseOut, d*0.4).onEnd = function() {
 				//if( room!="hell" )
@@ -1304,7 +1304,7 @@ class Manager {//}
 			}
 		}
 	}
-	
+
 	function credits() {
 		invCont.visible = controlsCont.visible = false;
 		root.alpha = 1;
@@ -1333,7 +1333,7 @@ class Manager {//}
 			n++;
 		}
 	}
-	
+
 	function setSprite(s:DSprite) {
 		lastSpot.spr = s;
 		buffer.dm.add(s,2);
@@ -1345,7 +1345,7 @@ class Manager {//}
 	function setAction(a:String, effect:Dynamic) {
 		lastSpot.act.set(a, effect);
 	}
-	
+
 	function initWorld() {
 		world = new World();
 		world.removeRectangle(2,4, 10,6);
@@ -1356,12 +1356,12 @@ class Manager {//}
 				world.addCollision(6,4, 2,1);
 				world.addCollision(7,5);
 				world.addCollision(11,5, 1,2);
-		
+
 				world.addCollision(9,4, 3,1);
-		
+
 				world.addCollision(2,7, 1,3);
 				world.addCollision(7,8, 3,2);
-				
+
 			case "kitchen" :
 				frame = 1;
 				world.addCollision(2,4);
@@ -1371,14 +1371,14 @@ class Manager {//}
 				world.addCollision(5,6);
 				world.addCollision(10,7, 2,3);
 				world.addCollision(11,6);
-			
+
 			case "park" :
 				frame = 2;
 				world.addCollision(9,4, 3,1);
 				world.addCollision(2,4, 2,1);
 				world.addCollision(2,5, 1,2);
 				world.addCollision(2,7);
-				
+
 			case "hell" :
 				frame = 3;
 				world.addCollision(9,4, 3,1);
@@ -1416,12 +1416,12 @@ class Manager {//}
 			}
 		refreshWorld();
 	}
-	
+
 	function refreshWorld() {
 		addHotSpots();
 	}
-	
-	
+
+
 	function onMouseDown(e) {
 		if( fl_pause )
 			return;
@@ -1430,7 +1430,7 @@ class Manager {//}
 		dragStart = new flash.geom.Point(pt.x, pt.y);
 		#end
 	}
-	
+
 	function onMouseUp(e) {
 		if( fl_pause )
 			return;
@@ -1443,7 +1443,7 @@ class Manager {//}
 		dragStart = null;
 		#end
 	}
-	
+
 	function onClick(e) {
 		if( skipClick || fl_ending )
 			return;
@@ -1452,10 +1452,10 @@ class Manager {//}
 			closePop();
 			return;
 		}
-		
+
 		if( fl_lockControls )
 			return;
-			
+
 		onArrive = null;
 		var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
 		pt.x = Std.int(pt.x/CWID);
@@ -1463,13 +1463,13 @@ class Manager {//}
 		if( !world.collide(pt.x, pt.y) )
 			movePlayer(pt.x, pt.y);
 	}
-	
+
 	function hideName() {
 		if( curName!=null )
 			curName.parent.removeChild(curName);
 		curName = null;
 	}
-	
+
 	function showName(str:String) {
 		hideName();
 		//if( pending!=null )
@@ -1487,14 +1487,14 @@ class Manager {//}
 		curName = tf;
 		curName.visible = !fl_pause && !fl_lockControls;
 	}
-	
+
 	//function closeActions() {
 		//if( menu!=null ) {
 			//menu.parent.removeChild(menu);
 			//menu = null;
 		//}
 	//}
-	
+
 	//function actionMenu(hs:Hotspot) {
 		//closeActions();
 		//if( fl_pause )
@@ -1522,7 +1522,7 @@ class Manager {//}
 			//y+=s.height-6;
 		//}
 	//}
-	
+
 	function makeText(str:String, ?multiLine=false) {
 		var tf = new flash.text.TextField();
 		tf.defaultTextFormat = FORMAT;
@@ -1542,7 +1542,7 @@ class Manager {//}
 		tf.filters = [ new flash.filters.GlowFilter(0x0,1, 4,4, 10) ];
 		return tf;
 	}
-	
+
 	function closePop(?nextQueue=true) {
 		if( popUp!=null ) {
 			popUp.parent.removeChild(popUp);
@@ -1557,7 +1557,7 @@ class Manager {//}
 			if( nextQueue && popQueue.length>0 )
 				pop( popQueue.pop() );
 	}
-	
+
 	function pop(str:String) {
 		if( popUp!=null ) {
 			popQueue.add(str);
@@ -1601,24 +1601,24 @@ class Manager {//}
 			new flash.filters.GlowFilter(0x0,1, 4,4, 10),
 		];
 		dm.add(s,2);
-		
+
 		s.x = Std.random(100) + 16*2*UPSCALE;
 		if( s.x<5 ) s.x = 5;
 		if( s.x+s.width+5>=WID ) s.x = WID-s.width-5;
-		
+
 		s.y = if( player.cy>=6 ) Std.random(30)+20 else Std.random(30)+CHEI*6*UPSCALE;
 		if( s.y<5 ) s.y = 5;
 		if( s.y+s.height+5>=HEI) s.y = HEI-s.height-5;
-		
+
 		fl_pause = true;
 		popUp = s;
 	}
-	
-	
+
+
 	function main(_) {
 		skipClick = false;
 		tw.update();
-		
+
 		if( dispScale==0 )
 			buffer.postFilters = [];
 		else {
@@ -1631,9 +1631,9 @@ class Manager {//}
 			buffer.render.x = -13*recal;
 			buffer.render.y = -15*recal;
 		}
-		
+
 		if( !fl_pause && !fl_ending ) {
-			
+
 			#if debug
 			if( dragStart!=null ) {
 				var g = drag.graphics;
@@ -1644,7 +1644,7 @@ class Manager {//}
 				g.drawRect(dragStart.x, dragStart.y, pt.x-dragStart.x, pt.y-dragStart.y);
 			}
 			#end
-			
+
 			var sx = 0.15;
 			var sy = 0.1;
 			#if debug
@@ -1670,12 +1670,12 @@ class Manager {//}
 				player.dx = sx*1.25;
 			if( player.dx==0 && player.xr>0.5+sx)
 				player.dx = -sx*1.25;
-				
+
 			if( player.dy==0 && player.yr<0.5-sy )
 				player.dy = sy;
 			if( player.dy==0 && player.yr>0.5+sy )
 				player.dy = -sy;
-				
+
 			if( player.dx==0 && player.dy==0 && playerPath.length==0 ) {
 				if( player.spr.isPlaying("walkUp") || player.spr.isPlaying("walkDown") ) {
 					footstep = 0;
@@ -1716,14 +1716,14 @@ class Manager {//}
 				setTrigger("letterPop");
 				afterPop = callback(changeRoom,"park");
 			}
-			
+
 			player.update();
 			DSprite.updateAll();
 		}
-		
+
 		if( hasItem("finalLetter") )
 			DSprite.updateAll();
-		
+
 		if( curName!=null ) {
 			//if( curName.x>=WID-curName.width )
 				//curName.x = root.mouseX - 6 - curName.width;
@@ -1735,7 +1735,7 @@ class Manager {//}
 		buffer2.update();
 		heroFade.x = player.spr.x;
 		heroFade.y = player.spr.y-4;
-		
+
 		#if debug
 		debug.custom.text = player.cx+","+player.cy;
 		#end
