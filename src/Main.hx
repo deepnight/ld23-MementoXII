@@ -1,5 +1,3 @@
-import World;
-
 class Main extends dn.Process {
 	public static var ME : Main;
 
@@ -57,17 +55,14 @@ class Main extends dn.Process {
 
 	/** Start game process **/
 	public function startGame() {
-		var e = Assets.tiles.h_getAndPlay("flow", root);
-		e.scale(16);
-
-		// if( Game.ME!=null ) {
-		// 	Game.ME.destroy();
-		// 	delayer.addF(function() {
-		// 		new Game();
-		// 	}, 1);
-		// }
-		// else
-		// 	new Game();
+		if( Game.ME!=null ) {
+			Game.ME.destroy();
+			delayer.addF(function() {
+				new Game();
+			}, 1);
+		}
+		else
+			new Game();
 	}
 
 
