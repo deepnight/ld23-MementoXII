@@ -1,0 +1,28 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "haxe",
+			"args": "active configuration",
+			"problemMatcher": [
+				"$haxe-absolute",
+				"$haxe",
+				"$haxe-error",
+				"$haxe-trace"
+			],
+			"presentation": {
+				"echo": true,
+				"reveal": "never",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"label": "haxe: active configuration"
+		}
+	]
+}
