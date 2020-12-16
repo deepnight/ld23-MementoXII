@@ -1,6 +1,8 @@
 class Main extends dn.Process {
 	public static var ME : Main;
 
+	var overlay : dn.heaps.filter.OverlayTexture;
+
 	/** Used to create "Access" instances that allow controller checks (keyboard or gamepad) **/
 	public var controller : dn.heaps.Controller;
 
@@ -14,7 +16,7 @@ class Main extends dn.Process {
         createRoot(s);
 
 		// Engine settings
-		engine.backgroundColor = 0xff<<24|0x111133;
+		engine.backgroundColor = 0xff<<24|0x0;
         #if( hl && !debug )
         engine.fullScreen = true;
         #end
@@ -43,14 +45,25 @@ class Main extends dn.Process {
 
 		#if js
 		// Optional helper that shows a "Click to start/continue" message when the game looses focus
-		// new dn.heaps.GameFocusHelper(Boot.ME.s2d, Assets.fontMedium);
+		new dn.heaps.GameFocusHelper(Boot.ME.s2d, Assets.font);
 		#end
+
+		overlay = new dn.heaps.filter.OverlayTexture(Classic, Const.SCALE); // TODO scanlines 7%
+		overlay.alpha = 0.3;
+		Boot.ME.s2d.filter = overlay;
 
 		// Start with 1 frame delay, to avoid 1st frame freezing from the game perspective
 		hxd.Timer.wantedFPS = 30;
 		hxd.Timer.skip();
 		delayer.addF( startGame, 1 );
-		trace("hello");
+
+		dn.Process.resizeAll();
+	}
+
+	override function onResize() {
+		super.onResize();
+		Const.SCALE = Std.int( dn.heaps.Scaler.bestFit(118,180, true) );
+		overlay.bevelSize = Const.SCALE;
 	}
 
 	/** Start game process **/

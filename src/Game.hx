@@ -43,7 +43,7 @@ class Game extends dn.Process {//}
 	// var dragStart	: Null<flash.geom.Point>;
 	// var drag		: flash.display.Sprite;
 	var curName		: Null<h2d.Text>;
-	// var roomBg		: DSprite;
+	var roomBg		: HSprite;
 	// var snapshot	: flash.display.Bitmap;
 	// var invCont		: flash.display.Sprite;
 	var invSep		: HSprite;
@@ -101,25 +101,24 @@ class Game extends dn.Process {//}
 		INAMES.set("finalLetter", "A letter");
 
 		room = "cell";
-		#if debug
-		room = "park";
-		//inventory.add("picPart1");
-		triggers.set("phoneDropped",1);
-		triggers.set("letterPop",1);
-		//triggers.set("sinkClean",1);
-		//inventory.add("broom");
-		//inventory.add("knife");
-		inventory.add("ring");
-		inventory.add("chestKey");
-		triggers.set("framed",1);
-		triggers.set("foundChest",1);
-		//triggers.set("sinkClean",1);
-		//triggers.set("sinkOpen",1);
-		#end
+		// #if debug
+		// room = "park";
+		// //inventory.add("picPart1");
+		// triggers.set("phoneDropped",1);
+		// triggers.set("letterPop",1);
+		// //triggers.set("sinkClean",1);
+		// //inventory.add("broom");
+		// //inventory.add("knife");
+		// inventory.add("ring");
+		// inventory.add("chestKey");
+		// triggers.set("framed",1);
+		// triggers.set("foundChest",1);
+		// //triggers.set("sinkClean",1);
+		// //triggers.set("sinkOpen",1);
+		// #end
 
 		wrapper = new h2d.Layers(root);
 		wrapper.setScale(Const.SCALE);
-		Boot.ME.s2d.filter = new dn.heaps.filter.OverlayTexture(Soft, Const.SCALE);	 // TODO scanlines 7%
 
 		// drag = buffer.dm.empty(99);
 
@@ -158,8 +157,8 @@ class Game extends dn.Process {//}
 		for(a in alist) {
 			var tf = makeText(a);
 			controlsCont.addChild(tf);
-			tf.x = 11*Const.SCALE + x*92;
-			tf.y = 16*5*Const.SCALE + y*17;
+			tf.x = 11 + x*92;
+			tf.y = 16*5 + y*17;
 			if( a==ABOUT ) {
 				tf.y+= 17;
 				tf.x+=45;
@@ -235,6 +234,11 @@ class Game extends dn.Process {//}
 		// #end
 	}
 
+
+	override function onResize() {
+		super.onResize();
+		wrapper.setScale(Const.SCALE);
+	}
 
 	override function onDispose() {
 		super.onDispose();
@@ -566,7 +570,7 @@ class Game extends dn.Process {//}
 
 			if( !hasItem("picPart1") && !hasTrigger("gotPicture") ) {
 				addSpot(57,24,6,7, "A torn photograph");
-				setSprite( lib.getSprite("picPart1") );
+				setSprite( Assets.tiles.getSprite("picPart1") );
 				setAction(LOOK, "An old picture, totally torn...");
 				setAction(REMEMBER, "I don't remember anything about this picture... I should look for the other parts.");
 				setAction(PICK, function() {
@@ -592,7 +596,7 @@ class Game extends dn.Process {//}
 			}
 			else {
 				addSpot(52,22,5,6, "A very old photograph");
-				setSprite( lib.getSprite("framed") );
+				setSprite( Assets.tiles.getSprite("framed") );
 				setAction(LOOK, "The photograph is very old and damaged. The character on the picture is barely recognizable. A woman?");
 				setAction(PICK, "No, this picture is in its place.");
 				setAction(REMEMBER, function() {
@@ -617,7 +621,7 @@ class Game extends dn.Process {//}
 
 			if( !hasTrigger("calendar") ) {
 				addSpot(40,20,8,9, "An old calendar");
-				setSprite( lib.getSprite("calendar") );
+				setSprite( Assets.tiles.getSprite("calendar") );
 				setAction(LOOK, "This calendar is from other times... Even the year print has almost completely disappeared.|!...Hey, is there some kind of hole behind it?");
 				setAction(REMEMBER, "I think SOMEONE bought me this calendar when I was sent in here.");
 				var f = function() {
@@ -648,7 +652,7 @@ class Game extends dn.Process {//}
 
 			if( !hasItem("picPart3") && !hasTrigger("gotPicture") ) {
 				addSpot(88,25,5,6, "Some sort of paper");
-				setSprite( lib.getSprite("picPart3") );
+				setSprite( Assets.tiles.getSprite("picPart3") );
 				setAction(LOOK, "The fragment of a torn photograph is hidden under the bolster.");
 				setAction(REMEMBER, "How did it get there?");
 				setAction(PICK, function() {
@@ -663,7 +667,7 @@ class Game extends dn.Process {//}
 
 			addSpot(14,64,8,12, "Sink");
 			if( hasTrigger("sinkOpen") ) {
-				var s = lib.getSprite("sinkWater");
+				var s = Assets.tiles.getSprite("sinkWater");
 				setSprite(s);
 				s.x+=1;
 				s.y+=3;
@@ -711,7 +715,7 @@ class Game extends dn.Process {//}
 
 			addSpot(89,41,6,6, "Small wooden case");
 			if( hasTrigger("ringBack") ) {
-				var s = setSprite( lib.getSprite("ringBack") );
+				var s = setSprite( Assets.tiles.getSprite("ringBack") );
 				s.x+=1;
 				s.y+=1;
 				setAction(REMEMBER, callback(changeRoom, "park"));
@@ -745,7 +749,7 @@ class Game extends dn.Process {//}
 
 			addSpot(42,29,8,6, "Sideboard left door");
 			if( hasTrigger("kitchenLeftOpen") ) {
-				setSprite( lib.getSprite("kitchenDoor") );
+				setSprite( Assets.tiles.getSprite("kitchenDoor") );
 				setAction(LOOK, "All kind of silverware, plates and things like that.");
 				setAction(REMEMBER, "I used to be the chef of the house...");
 			}
@@ -759,7 +763,7 @@ class Game extends dn.Process {//}
 
 			addSpot(51,29,8,6, "Sideboard right door");
 			if( hasTrigger("kitchenRightOpen") ) {
-				setSprite( lib.getSprite("kitchenDoor") );
+				setSprite( Assets.tiles.getSprite("kitchenDoor") );
 				if( !hasTrigger("foundChest") ) {
 					setAction(LOOK, function() {
 						pop("Cups, thousands of spoons and a tea set.|!You also found a STEEL CHEST inside the sideboard.");
@@ -791,7 +795,7 @@ class Game extends dn.Process {//}
 
 			if( !hasTrigger("rememberTable") ) {
 				addSpot(31,48,10,13, "Tablecloth");
-				setSprite( lib.getSprite("kitchenTable", 0) );
+				setSprite( Assets.tiles.getSprite("kitchenTable", 0) );
 				setAction(LOOK, "Very old. And completely stained.|!As you touch the surface, you feel something underneath...");
 				setAction(REMEMBER, "It's so old that I think Lydia even bought it before we met.|!I remember she had the habit to hide... SOMETHING underneath...");
 				var f = function() {
@@ -815,7 +819,7 @@ class Game extends dn.Process {//}
 			else {
 				if( !hasTrigger("foundKey") ) {
 					addSpot(34,47,6,6, "Small key");
-					setSprite( lib.getSprite("kitchenTable", 1) );
+					setSprite( Assets.tiles.getSprite("kitchenTable", 1) );
 					setAction(LOOK, "A small ornamented key is laying on the table. Probably made of copper.");
 					setAction(REMEMBER, "I used to play for long hours with this key.|What was it used for?");
 					setAction(PICK, function() {
@@ -828,7 +832,7 @@ class Game extends dn.Process {//}
 
 			if( hasTrigger("foundChest") ) {
 				addSpot(40,34,13,11, "A steel chest");
-				setSprite( lib.getSprite("kitchenChest", hasTrigger("openChest") ? 1 : 0) );
+				setSprite( Assets.tiles.getSprite("kitchenChest", hasTrigger("openChest") ? 1 : 0) );
 				if( !hasTrigger("openChest") )
 					setAction(LOOK, "It seems sturdy. And it's locked.");
 				else {
@@ -875,7 +879,7 @@ class Game extends dn.Process {//}
 
 			if( !hasItem("knife") ) {
 				addSpot(25,48,6,6, "Knife");
-				setSprite( lib.getSprite("kitchenKnife") );
+				setSprite( Assets.tiles.getSprite("kitchenKnife") );
 				setAction(LOOK, "A basic steel knife. The edge became (or got) blunt.|Might be useful.");
 				setAction(USE, "This won't cut anything... But it might become handy.");
 				setAction(PICK, function() {
@@ -886,7 +890,7 @@ class Game extends dn.Process {//}
 
 			addSpot(86,53,12,25, "Cupboard");
 			if( hasTrigger("openCup") ) {
-				setSprite( lib.getSprite("cupDoors") ).x-=4;
+				setSprite( Assets.tiles.getSprite("cupDoors") ).x-=4;
 				if( !hasItem("broom") )
 					setAction(LOOK, function() {
 						pop("The cupboard contains various chemicals and upkeep products.");
@@ -948,7 +952,7 @@ class Game extends dn.Process {//}
 
 			if( hasTrigger("letterPop") && !hasItem("finalLetter") ) {
 				addSpot(69,41,7,7, "A letter");
-				setSprite( lib.getSprite("finalLetter") );
+				setSprite( Assets.tiles.getSprite("finalLetter") );
 				setAction(LOOK, "A letter.|The writing seems to be... mine.");
 				setAction(REMEMBER, "Did I write this letter ?");
 				var f = function() {
@@ -971,7 +975,7 @@ class Game extends dn.Process {//}
 
 			if( !hasTrigger("phoneDropped") ) {
 				addSpot(18,25,7,6, "???");
-				setSprite( lib.getSprite("phone") );
+				setSprite( Assets.tiles.getSprite("phone") );
 				setAction(LOOK, "There is SOMETHING in the leaves.");
 				setAction(REMEMBER, "!I can't see what it is from here.");
 				if( !hasItem("broom") )
@@ -988,7 +992,7 @@ class Game extends dn.Process {//}
 			}
 			else {
 				addSpot(20,49,6,6, "Cellphone");
-				setSprite( lib.getSprite("phone") );
+				setSprite( Assets.tiles.getSprite("phone") );
 				setAction(LOOK, "It's a cellphone, a quite common model.");
 				setAction(REMEMBER, "It's mine.");
 				setAction(PICK, "!No.|For some reason... I don't want to keep it...");
@@ -1230,7 +1234,6 @@ class Game extends dn.Process {//}
 	*/
 
 	function initWorld() {
-		/*
 		world = new World();
 		world.removeRectangle(2,4, 10,6);
 		var frame = 0;
@@ -1269,44 +1272,44 @@ class Game extends dn.Process {//}
 		}
 
 		if( roomBg!=null )
-			roomBg.parent.removeChild(roomBg);
-		roomBg = lib.getSprite("cell", frame);
+			roomBg.remove();
+		roomBg = Assets.tiles.h_get("cell", frame);
 		if( room=="cell" ) {
-			var r = lib.getSprite("reflections");
+			var r = Assets.tiles.h_get("reflections");
 			roomBg.addChild(r);
 			r.alpha = 0;
 			r.x = 24;
 			r.y = 32;
 			var loop = null;
 			loop = function() {
-				tw.create(r, "alpha", 1, TLinear, 1000).onEnd = function() {
-					tw.create(r, "alpha", 0, TLinear, 1000).onEnd = loop;
+				tw.createMs(r.alpha, 1, TLinear, 1000).onEnd = function() {
+					tw.createMs(r.alpha, 0, TLinear, 1000).onEnd = loop;
 				}
 			}
 			loop();
 		}
-		buffer.dm.add( roomBg, 1 );
+		wrapper.add( roomBg, 1 );
 		for(x in 0...world.wid)
 			for(y in 0...world.hei) {
 				#if debug
 				if( SHOW_COLLISIONS && world.collide(x,y) ) {
-					var s = lib.getSprite("collision");
-					buffer.dm.add(s, 10);
-					s.x = x*CWID;
-					s.y = y*CHEI;
+					var s = Assets.tiles.h_get("collision");
+					wrapper.add(s, 10);
+					s.x = x*Const.GRID;
+					s.y = y*Const.GRID;
 					s.alpha = 0.2;
 				}
 				#end
 			}
 		refreshWorld();
-		*/
 	}
 
-	/*
-	function refreshWorld() {
+	inline function refreshWorld() {
 		addHotSpots();
 	}
 
+
+	/*
 
 	function onMouseDown(e) {
 		if( fl_pause )
@@ -1450,6 +1453,8 @@ class Game extends dn.Process {//}
 			popQueue.add(str);
 			return;
 		}
+
+		// Parse format
 		if( str.indexOf("|")>0 ) {
 			var parts = str.split("|");
 			str = parts[0];
@@ -1467,12 +1472,14 @@ class Game extends dn.Process {//}
 			tcol = 0xA7BAB1;
 			str = str.substr(1);
 		}
+
 		skipClick = true;
 		lockControls(true);
 		if( curName!=null )
 			curName.visible = false;
 		closePop(false);
 
+		// Create pop-up
 		var f = new h2d.Flow();
 		wrapper.add(f,2);
 
@@ -1484,12 +1491,13 @@ class Game extends dn.Process {//}
 
 		f.backgroundTile = h2d.Tile.fromColor(col);
 		f.padding = 4;
+		f.paddingTop = 0;
 
-		f.x = Std.random(100) + 16*2*Const.SCALE;
+		f.x = Std.random(100) + 16*2;
 		if( f.x<5 ) f.x = 5;
 		if( f.x+f.outerWidth+5>=w() ) f.x = w()-f.outerWidth-5;
 
-		f.y = if( player.cy>=6 ) Std.random(30)+20 else Std.random(30) + Const.GRID*6*Const.SCALE;
+		f.y = if( player.cy>=6 ) Std.random(30)+20 else Std.random(30) + Const.GRID*6;
 		if( f.y<5 ) f.y = 5;
 		if( f.y+f.outerHeight+5>=h()) f.y = h()-f.outerHeight-5;
 
