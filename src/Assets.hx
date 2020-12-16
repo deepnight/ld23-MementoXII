@@ -1,10 +1,12 @@
 class Assets {
 	public static var tiles : SpriteLib;
-	public static var SOUNDS = dn.heaps.assets.SfxDirectory.load("res/sfx");
+	public static var font : h2d.Font;
+	public static var SOUNDS = dn.heaps.assets.SfxDirectory.load("sfx");
 
 	public static function init() {
 		var t = hxd.Res.tiles.toTile();
 		tiles = new SpriteLib([t]);
+		font = hxd.Res.fonts.alterebroOutline.toFont();
 
 		tiles.setDefaultCenterRatio(0,0);
 
