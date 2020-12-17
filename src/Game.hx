@@ -36,6 +36,7 @@ class Game extends dn.Process {//}
 
 	var footStep = 0.;
 
+	var snapshotTex : h3d.mat.Texture;
 	var popUp		: Null<h2d.Flow>;
 	var curName		: Null<h2d.Text>;
 	var roomBg		: HSprite;
@@ -116,6 +117,8 @@ class Game extends dn.Process {//}
 
 		wrapper = new h2d.Layers(root);
 		wrapper.x = Std.int( Const.WID*0.5 - Const.GAMEZONE_WID*0.5 );
+
+		snapshotTex = new h3d.mat.Texture(w(),h(), [Target]);
 
 		distort = new DistortFilter(2,32,4);
 		distort.intensity = 0;
@@ -259,6 +262,7 @@ class Game extends dn.Process {//}
 	override function onResize() {
 		super.onResize();
 		root.setScale(Const.SCALE);
+		snapshotTex.resize(w(), h());
 	}
 
 	override function onDispose() {
@@ -1185,24 +1189,22 @@ class Game extends dn.Process {//}
 
 	function changeRoom(k:String) {
 		var from = room;
-		var d = #if debug 1000; #else 3000; #end
-		d = 3000; // HACK
+		var d = #if debug 1000; #else 4000; #end
 
 		hideName();
 
-		// Draw current view to snapshot
-		var tex = new h3d.mat.Texture(w(),h(), [Target]);
-		root.drawTo(tex);
+		// Draw current view to texture
+		root.drawTo(snapshotTex);
 
 		// Display old view in front of current & fade it away
 		var snapshot = new h2d.Bitmap();
 		root.add(snapshot, 99);
-		snapshot.tile = h2d.Tile.fromTexture( tex );
+		snapshot.tile = h2d.Tile.fromTexture( snapshotTex );
 		snapshot.setScale(1/Const.SCALE);
-		tw.createMs(snapshot.alpha, 0, TEaseIn, d*0.8).onEnd = function() {
-			snapshot.tile.dispose();
+		tw.createMs(snapshot.alpha, 0, TEaseIn, d*0.8);
+		delayer.addMs(()->{
 			snapshot.remove();
-		}
+		}, d);
 
 		var onTeleport = null;
 		room = k;
@@ -1271,7 +1273,7 @@ class Game extends dn.Process {//}
 		lockControls(true);
 
 		tw.createMs(distort.intensity, 1, TEaseIn, d*0.6).onEnd = function() {
-			tw.createMs(distort.intensity, 0.3, TEaseOut, d*0.4).onEnd = function() {
+			tw.createMs(distort.intensity, 0.1, TEaseOut, d*0.4).onEnd = function() {
 				tw.createMs(distort.intensity, 0, TEaseIn, #if debug 500 #else 6000 #end);
 				lockControls(false);
 				if( onTeleport!=null )
