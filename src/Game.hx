@@ -35,7 +35,7 @@ class Game extends dn.Process {//}
 	var actions		: List<h2d.Text>;
 	var pending		: Null<String>;
 
-	var footstep	: Float;
+	var footStep = 0.;
 
 	var popUp		: Null<h2d.Flow>;
 	var curName		: Null<h2d.Text>;
@@ -83,7 +83,6 @@ class Game extends dn.Process {//}
 		triggers = new Map();
 		popQueue = new List();
 		dispScale = 0;
-		footstep = 0;
 
 		pathFinder = new dn.pathfinder.AStar( (x,y)->{ cx:x, cy:y } );
 
@@ -132,6 +131,10 @@ class Game extends dn.Process {//}
 		player.spr.setCenterRatio(0.5, 0.95);
 		player.moveTo(10,5);
 		wrapper.add(player.spr, 5);
+		player.spr.anim.registerStateAnim("walkUp", 1, ()->player.dirY==-1 && player.isMoving && !fl_lockControls );
+		player.spr.anim.registerStateAnim("walkDown", 1, ()->player.dirY==1 && player.isMoving && !fl_lockControls );
+		player.spr.anim.registerStateAnim("standDown", 0, ()->player.dirY==1);
+		player.spr.anim.registerStateAnim("standUp", 0, ()->player.dirY==-1);
 
 		var s = Assets.tiles.h_get("separator", 1);
 		wrapper.add(s, 3);
@@ -223,14 +226,14 @@ class Game extends dn.Process {//}
 		Assets.SOUNDS.ambiant().play(true);
 
 		// Intro
-		#if !debug
+		// #if !debug
 		root.alpha = 0;
 		tw.createMs(root.alpha, 1, 2000);
 		dispScale = 0.5;
 		tw.createMs(this.dispScale, 0, TEaseOut, 5000);
-		player.spr.anim.play("wakeWait");
+		player.spr.anim.playAndLoop("wakeWait");
 		player.moveTo(10,4);
-		player.update();
+		player.update(tmod);
 		pop("Day 4380");
 		pop("!...12 years today.");
 		pop("And still many to go in this cell.");
@@ -238,21 +241,20 @@ class Game extends dn.Process {//}
 		afterPop = function() {
 			fl_pause = true;
 			player.spr.anim.play("wakeUp", 1);
-			player.spr.anim.onEnd( ()->player.spr.anim.play("standDown") );
 			var a = tw.createMs(player.yr, 1, 300);
 			a.onUpdate = function() {
 				// DSprite.updateAll();
-				player.update();
+				player.update(tmod);
 			}
 			a.onEnd = function() {
 				resumeGame();
 				Assets.SOUNDS.footstep1(1);
 				player.moveTo(10,5);
 				player.yr = 0;
-				player.update();
+				player.update(tmod);
 			}
 		}
-		#end
+		// #end
 	}
 
 
@@ -1460,7 +1462,7 @@ class Game extends dn.Process {//}
 
 		// Create pop-up
 		var f = new h2d.Flow();
-		wrapper.add(f,2);
+		wrapper.add(f,10);
 
 		var tf = makeText(str, true);
 		tf.textColor = tcol;
@@ -1561,31 +1563,19 @@ class Game extends dn.Process {//}
 				player.dy = -sy;
 
 			if( player.dx==0 && player.dy==0 && playerPath.length==0 ) {
-				// Stop walk anim
-				if( player.spr.anim.isPlaying("walkUp") || player.spr.anim.isPlaying("walkDown") ) {
-					footstep = 0;
-					if( player.dirY==-1 )
-						player.spr.anim.play("standUp");
-					else
-						player.spr.anim.play("standDown");
-				}
+				if( player.spr.anim.isPlaying("walkUp") || player.spr.anim.isPlaying("walkDown") )
+					footStep = 0;
 			}
 			else {
 				// Foot steps sounds
-				footstep--;
-				if( footstep<=0 ) {
+				footStep-=tmod;
+				if( footStep<=0 ) {
 					if( Std.random(3)==0 )
 						Assets.SOUNDS.footstep1(1);
 					else
 						Assets.SOUNDS.footstep2(1);
-					footstep = 6;
+					footStep = 6;
 				}
-				// Walk anim
-				if( !player.spr.anim.isPlaying("read") )
-					if( player.dirY==-1 )
-						player.spr.anim.play("walkUp");
-					else
-						player.spr.anim.play("walkDown");
 			}
 
 			// Actions shortcuts
@@ -1601,31 +1591,10 @@ class Game extends dn.Process {//}
 				afterPop = changeRoom.bind("park");
 			}
 
-			player.update();
+			player.update(tmod);
 		}
 
-	}
-	/*
-	function main(_) {
-
-		if( hasItem("finalLetter") )
-			DSprite.updateAll();
-
-		if( curName!=null ) {
-			//if( curName.x>=WID-curName.width )
-				//curName.x = root.mouseX - 6 - curName.width;
-			//else
-				curName.x = root.mouseX+6;
-			curName.y = root.mouseY+12;
-		}
-		buffer.update();
-		buffer2.update();
 		heroFade.x = player.spr.x;
 		heroFade.y = player.spr.y-4;
-
-		#if debug
-		debug.custom.text = player.cx+","+player.cy;
-		#end
 	}
-	/****/
 }
