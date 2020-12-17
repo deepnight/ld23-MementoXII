@@ -25,8 +25,7 @@ class Game extends dn.Process {//}
 	public var wrapper : h2d.Layers;
 	var world		: World;
 	var player		: Entity;
-	// var displace	: flash.display.BitmapData; // TODO
-	var dispScale	: Float;
+	var distort : DistortFilter;
 
 	var onArrive	: Null<Void->Void>;
 	var afterPop	: Null<Void->Void>;
@@ -69,6 +68,7 @@ class Game extends dn.Process {//}
 	public function new() {
 		super(Main.ME);
 
+
 		createRoot(Main.ME.root);
 		ME = this;
 
@@ -82,14 +82,8 @@ class Game extends dn.Process {//}
 		inventory = new List();
 		triggers = new Map();
 		popQueue = new List();
-		dispScale = 0;
 
 		pathFinder = new dn.pathfinder.AStar( (x,y)->{ cx:x, cy:y } );
-
-		var bg = new h2d.Graphics(root);
-		bg.beginFill(#if debug 0x0 #else 0x0 #end,1);
-		bg.drawRect(0,0,w(),h());
-		bg.endFill();
 
 		INAMES.set("picture", "Old photograph");
 		INAMES.set("picPart1", "photograph fragment (1)");
@@ -122,8 +116,11 @@ class Game extends dn.Process {//}
 
 		wrapper = new h2d.Layers(root);
 		wrapper.setScale(Const.SCALE);
+		var bg = new h2d.Bitmap( h2d.Tile.fromColor(0xff00ff, Const.WID, Const.HEI), wrapper );
 
-		// displace = new flash.display.BitmapData(buffer.width,buffer.height, true, 0x0);
+		distort = new DistortFilter(2,32,4);
+		distort.intensity = 0;
+		wrapper.filter = distort;
 
 		initWorld();
 
@@ -159,7 +156,7 @@ class Game extends dn.Process {//}
 		wrapper.add(actionsWrapper, 1);
 		miscWrapper = new h2d.Flow();
 		wrapper.add(miscWrapper, 1);
-		miscWrapper.minWidth = Const.WID;
+		miscWrapper.minWidth = Const.GAMEZONE_WID;
 		miscWrapper.horizontalAlign = Middle;
 		miscWrapper.horizontalSpacing = 8;
 		miscWrapper.y = 112;
@@ -226,11 +223,11 @@ class Game extends dn.Process {//}
 		Assets.SOUNDS.ambiant().play(true);
 
 		// Intro
-		// #if !debug
+		#if !debug
 		root.alpha = 0;
 		tw.createMs(root.alpha, 1, 2000);
-		dispScale = 0.5;
-		tw.createMs(this.dispScale, 0, TEaseOut, 5000);
+		distort.intensity = 0.5;
+		tw.createMs(distort.intensity, 0, TEaseOut, 5000);
 		player.spr.anim.playAndLoop("wakeWait");
 		player.moveTo(10,4);
 		player.update(tmod);
@@ -254,7 +251,7 @@ class Game extends dn.Process {//}
 				player.update(tmod);
 			}
 		}
-		// #end
+		#end
 	}
 
 
@@ -1261,9 +1258,9 @@ class Game extends dn.Process {//}
 		onArrive = null;
 		lockControls(true);
 
-		tw.createMs(this.dispScale, 1, TEaseIn, d*0.6).onEnd = function() {
-			tw.createMs(this.dispScale, 0.3, TEaseOut, d*0.4).onEnd = function() {
-				tw.createMs(this.dispScale, 0, TEaseIn, #if debug 500 #else 6000 #end);
+		tw.createMs(distort.intensity, 1, TEaseIn, d*0.6).onEnd = function() {
+			tw.createMs(distort.intensity, 0.3, TEaseOut, d*0.4).onEnd = function() {
+				tw.createMs(distort.intensity, 0, TEaseIn, #if debug 500 #else 6000 #end);
 				lockControls(false);
 				if( onTeleport!=null )
 					onTeleport();
