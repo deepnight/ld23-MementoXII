@@ -1,7 +1,7 @@
 import dn.heaps.slib.*;
 
 class Entity {
-	var world	: World;
+	public var world	: World;
 	public var cx		: Int;
 	public var cy		: Int;
 	public var xr		: Float;

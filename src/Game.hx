@@ -1057,7 +1057,7 @@ class Game extends dn.Process {//}
 					tw.createMs(heroFade.alpha, 0.5, TEaseIn, 1500);
 					pop("You take the letter and start to read it.");
 					player.spr.anim.stopWithStateAnims();
-					player.spr.anim.play("read");
+					player.spr.anim.playAndLoop("read");
 					pop("@Dear myself,");
 					afterPop = function() {
 						changeRoom("cell");
@@ -1181,18 +1181,19 @@ class Game extends dn.Process {//}
 
 
 	function changeRoom(k:String) {
-		/*
 		var from = room;
 		var d = #if debug 1000; #else 5000; #end
-		if( snapshot!=null ) {
-			snapshot.bitmapData.dispose();
-			snapshot.parent.removeChild(snapshot);
-		}
-		snapshot = new flash.display.Bitmap( buffer.clone() );
-		buffer.dm.add(snapshot, 99);
-		tw.create(snapshot, "alpha", 0, TEaseIn, d*0.8).onEnd = function() {
-			snapshot.bitmapData.dispose();
-		}
+
+		// TODO distorsion
+		// if( snapshot!=null ) {
+		// 	snapshot.bitmapData.dispose();
+		// 	snapshot.parent.removeChild(snapshot);
+		// }
+		// snapshot = new flash.display.Bitmap( buffer.clone() );
+		// buffer.dm.add(snapshot, 99);
+		// tw.create(snapshot, "alpha", 0, TEaseIn, d*0.8).onEnd = function() {
+		// 	snapshot.bitmapData.dispose();
+		// }
 
 		var onTeleport = null;
 		room = k;
@@ -1222,16 +1223,15 @@ class Game extends dn.Process {//}
 							fl_ending = true;
 							actionsWrapper.visible = false;
 							invCont.visible = false;
-							tw.create(heroFade, "alpha", 1, TEase, 5000);
-							player.spr.playAnim("cry",1);
-							player.spr.onEndAnim = function() {
-								player.spr.playAnim("afterCry");
-								tw.terminate(heroFade);
-								tw.create(heroFade, "alpha", 0.7, TEaseOut, 500);
-								haxe.Timer.delay(function() {
-									tw.create(root, "alpha", 0, TEaseIn, 1000).onEnd = credits;
-								}, 2000);
-							}
+							tw.createMs(heroFade.alpha, 1, TEase, 5000);
+							player.spr.anim.play("cry",1).chain("afterCry",9999);
+							delayer.addS(()->{
+								tw.terminateWithoutCallbacks(heroFade.alpha);
+								tw.createMs(heroFade.alpha, 0.7, TEaseOut, 500);
+								delayer.addS(()->{
+									tw.createMs(root.alpha, 0, TEaseIn, 1000).onEnd = credits;
+								}, 2);
+							}, 7);
 						}
 					}
 			case "kitchen" :
@@ -1253,7 +1253,7 @@ class Game extends dn.Process {//}
 				player.moveTo(10,6);
 		}
 
-		SOUNDS.teleport(1);
+		Assets.SOUNDS.teleport(1);
 		initWorld();
 		player.world = world;
 		playerPath = new Array();
@@ -1261,50 +1261,39 @@ class Game extends dn.Process {//}
 		onArrive = null;
 		lockControls(true);
 
-		tw.create(this, "dispScale", 1, TEaseIn, d*0.6).onEnd = function() {
-			tw.create(this, "dispScale", 0.3, TEaseOut, d*0.4).onEnd = function() {
-				//if( room!="hell" )
-					tw.create(this, "dispScale", 0, TEaseIn, #if debug 500 #else 6000 #end);
-				//else
-					//tw.create(this, "dispScale", 0.05, TEaseIn, #if debug 500 #else 6000 #end);
+		tw.createMs(this.dispScale, 1, TEaseIn, d*0.6).onEnd = function() {
+			tw.createMs(this.dispScale, 0.3, TEaseOut, d*0.4).onEnd = function() {
+				tw.createMs(this.dispScale, 0, TEaseIn, #if debug 500 #else 6000 #end);
 				lockControls(false);
 				if( onTeleport!=null )
 					onTeleport();
 			}
 		}
-		*/
 	}
 
-	/*
 	function credits() {
-		invCont.visible = actionsWrapper.visible = false;
+		invCont.visible = actionsWrapper.visible = miscWrapper.visible = false;
 		root.alpha = 1;
-		buffer.kill();
-		buffer2.kill();
+		uiInteractives = [];
+		wrapper.removeChildren();
 		var list = [
+			"\"Memento XII\"",
+			"A 48h Ludum Dare game by Sebastien Benard",
+			"",
 			"Thank you for playing!",
 			"Feel free to comment at DEEPNIGHT.NET :)",
 		];
-		if( EXTENDED )
-			list = list.concat([
-				"\"Memento XII\"",
-				"A 48h Ludum Dare game by Sebastien Benard",
-			]);
 		var n = 0;
 		for(t in list) {
 			var tf = makeText(t);
-			root.addChild(tf);
+			wrapper.addChild(tf);
 			tf.x = 20;
 			tf.y = 20 + 16*n;
 			tf.alpha = 0;
-			var tmp = n;
-			haxe.Timer.delay(function() {
-				tw.create(tf, "alpha", tmp==0 ? 1 : 0.7, TEaseIn, 1000);
-			}, 2000*n);
+			tw.createMs(tf.alpha, n==0 ? 1 : 0.5, TEaseIn, 1000).delayMs(1500*n);
 			n++;
 		}
 	}
-	*/
 
 	function setSprite(s:HSprite) {
 		lastSpot.spr = s;
@@ -1528,6 +1517,12 @@ class Game extends dn.Process {//}
 			for(h in hotSpots)
 				h.i.backgroundColor = interactiveDebug ? 0x66ff00ff : null;
 		}
+
+		#if debug
+		if( K.isPressed(K.C) ) {
+			credits();
+		}
+		#end
 
 
 		if( !fl_pause && !fl_ending ) {

@@ -48,8 +48,8 @@ class Assets {
 		tiles.sliceAnimGrid("read",0,25,  14,0, 2);
 
 		tiles.sliceGrid("cry",0,  0,1, 5);
-		tiles.defineAnim("cry", "0(20), 1(70), 2(10), 3(50), 4(100)");
-		tiles.sliceAnimGrid("afterCry",0,1,  4,1);
+		tiles.defineAnim("cry", "0(20), 1(70), 2(10), 3(100), 4(60)");
+		tiles.sliceAnimGrid("afterCry",0,100,  0,1);
 
 		tiles.slice("heroFade",0,  0,16*25, 12*16, 9*16);
 
