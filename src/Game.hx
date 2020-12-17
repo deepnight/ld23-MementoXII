@@ -8,7 +8,8 @@ typedef Hotspot = {
 class Game extends dn.Process {//}
 	public static var ME : Game;
 
-	static var DEBUG_INTERACTIVES = true;
+	static var DEBUG_INTERACTIVES = false;
+
 	static var SHOW_COLLISIONS = false;
 	static var INAMES = new Map();
 	static var EXTENDED = true;
@@ -359,6 +360,7 @@ class Game extends dn.Process {//}
 	function makeText(str:String, multiline=false) {
 		var tf = new h2d.Text(Assets.font);
 		tf.text = str;
+		tf.filter = new dn.heaps.filter.PixelOutline();
 		if( multiline )
 			tf.maxWidth = 128;
 		return tf;
@@ -1428,27 +1430,6 @@ class Game extends dn.Process {//}
 		curName = tf;
 		curName.visible = !fl_pause && !fl_lockControls;
 	}
-
-	function makeText(str:String, ?multiLine=false) {
-		var tf = new flash.text.TextField();
-		tf.defaultTextFormat = FORMAT;
-		tf.multiline = multiLine;
-		tf.wordWrap = multiLine;
-		tf.selectable = false;
-		tf.width = 150;
-		tf.height = 300;
-		tf.text = str;
-		tf.antiAliasType = flash.text.AntiAliasType.NORMAL;
-		tf.embedFonts = true;
-		tf.sharpness = 400;
-		tf.scaleX = tf.scaleY = 2;
-		tf.width = tf.textWidth+5;
-		tf.height = tf.textHeight+5;
-		tf.filters = [ new flash.filters.GlowFilter(0x0,1, 4,4, 10) ];
-		tf.filters = [ new flash.filters.GlowFilter(0x0,1, 4,4, 10) ];
-		return tf;
-	}
-	*/
 
 	function closePop(?nextQueue=true) {
 		if( popUp!=null ) {
