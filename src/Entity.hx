@@ -12,8 +12,10 @@ class Entity {
 
 	public var dirY	: Int;
 	public var spr		: HSprite;
+	final frict = 0.7;
 
-	public var isMoving = false;
+	public var x(get,never) : Int; inline function get_x() return Std.int( (cx+xr)*Const.GRID );
+	public var y(get,never) : Int; inline function get_y() return Std.int( (cy+yr)*Const.GRID );
 
 	public function new(w, s) {
 		world = w;
@@ -22,6 +24,10 @@ class Entity {
 		xr = yr = 0.5;
 		dx = dy = 0;
 		dirY = 1;
+	}
+
+	public inline function isMoving() {
+		return M.fabs(dx)>0.01 || M.fabs(dy)>0.01;
 	}
 
 	public function moveTo(x,y) {
@@ -39,8 +45,6 @@ class Entity {
 	}
 
 	public function update(tmod:Float) {
-		isMoving = dx!=0 || dy!=0;
-
 		// Y
 		if( yr+dy>1 && world.collide(cx,cy+1) ) {
 			yr = 1;
@@ -85,8 +89,12 @@ class Entity {
 		if( dy<0 ) dirY = -1;
 		if( dy>0 ) dirY = 1;
 
-		dx = 0;
-		dy = 0;
+		dx*=Math.pow(frict, tmod);
+		dy*=Math.pow(frict, tmod);
+		if( M.fabs(dx)<=0.0001 ) dx = 0;
+		if( M.fabs(dy)<=0.0001 ) dy = 0;
+		// dx = 0;
+		// dy = 0;
 
 		spr.x = Std.int( cx*Const.GRID + xr*Const.GRID );
 		spr.y = Std.int( cy*Const.GRID + yr*Const.GRID );

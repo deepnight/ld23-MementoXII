@@ -35,6 +35,7 @@ class Game extends dn.Process {//}
 	var pending		: Null<String>;
 
 	var footStep = 0.;
+	var walkAnimSpd = 0.75;
 
 	var snapshotTex : h3d.mat.Texture;
 	var popUp		: Null<h2d.Flow>;
@@ -130,8 +131,8 @@ class Game extends dn.Process {//}
 		player.spr.setCenterRatio(0.5, 0.95);
 		player.moveTo(10,5);
 		wrapper.add(player.spr, 5);
-		player.spr.anim.registerStateAnim("walkUp", 1, ()->player.dirY==-1 && player.isMoving && !isGameLocked() );
-		player.spr.anim.registerStateAnim("walkDown", 1, ()->player.dirY==1 && player.isMoving && !isGameLocked() );
+		player.spr.anim.registerStateAnim("walkUp", 1, walkAnimSpd, ()->player.dirY==-1 && player.isMoving() && !isGameLocked() );
+		player.spr.anim.registerStateAnim("walkDown", 1, walkAnimSpd, ()->player.dirY==1 && player.isMoving() && !isGameLocked() );
 		player.spr.anim.registerStateAnim("standDown", 0, ()->player.dirY==1);
 		player.spr.anim.registerStateAnim("standUp", 0, ()->player.dirY==-1);
 
@@ -293,11 +294,8 @@ class Game extends dn.Process {//}
 	}
 
 	function onMouseDown(ev:hxd.Event) {
-		trace("raw down");
 		if( skipClick || fl_ending )
 			return;
-
-		trace("down");
 
 		if( fl_pause ) {
 			resumeGame();
@@ -310,9 +308,7 @@ class Game extends dn.Process {//}
 
 		onArrive = null;
 		var m = getMouse();
-		trace(m);
-		if( !world.collide(m.cx, m.cy) )
-			movePlayer(m.cx,m.cy);
+		movePlayer(m.cx,m.cy);
 	}
 
 	function onMouseUp(ev:hxd.Event) {
@@ -426,6 +422,7 @@ class Game extends dn.Process {//}
 
 		playerPath = getPath(player.cx, player.cy, pt.x, pt.y);
 		playerTarget = {cx:cx, cy:cy}
+
 		return playerPath.length>0;
 	}
 
@@ -473,7 +470,7 @@ class Game extends dn.Process {//}
 			addItem("picture");
 			setTrigger("gotPicture");
 			Assets.SOUNDS.success(1);
-			pop("You assembled the 3 parts and now have restored the picture.");
+			pop("!You assembled the 3 parts and now have restored the PICTURE.");
 		}
 		updateInventory();
 	}
@@ -568,17 +565,17 @@ class Game extends dn.Process {//}
 	}
 
 	function getClosest(cx,cy) {
-		for( dist in 1...4)
-			for( d in [{x:0,y:dist}, {x:-dist,y:0}, {x:dist,y:0}, {x:0,y:-dist} ] )
-				if( !world.collide(cx+d.x, cy+d.y) )
-					return {x:cx+d.x, y:cy+d.y}
+		if( !world.collide(cx,cy) )
+			return { x:cx, y:cy }
 
-		for( dist in 1...4)
-			for( d in [{x:-dist,y:-dist}, {x:dist,y:-dist}, {x:dist,y:dist}, {x:-dist,y:dist}, ] )
-				if( !world.collide(cx+d.x, cy+d.y) )
-					return {x:cx+d.x, y:cy+d.y}
-
-		return null;
+		var all = dn.Bresenham.getDisc(cx,cy, 3);
+		var dh = new dn.DecisionHelper(all);
+		dh.remove( (pt)->world.collide(pt.x, pt.y) );
+		dh.score( (pt)->pt.x==cx && pt.y-cy<=2 ? 1 : 0 ); // below
+		dh.score( (pt)->M.fabs(pt.x-cx)<=1 && pt.y==cy ? 1 : 0 ); // left or right
+		dh.score( (pt)->-M.dist(cx,cy, pt.x, pt.y) ); // close to requested pt
+		dh.score( (pt)->-M.dist(pt.x, pt.y, player.cx, player.cy)*0.1 ); // close to player
+		return dh.getBest();
 	}
 
 	public function getPath(x:Int,y:Int, tx:Int,ty:Int) {
@@ -1288,7 +1285,6 @@ class Game extends dn.Process {//}
 	function initWorld() {
 		world = new World();
 		world.removeRectangle(2,4, 10,6);
-		pathFinder.init(world.wid, world.hei, world.collide);
 		var frame = 0;
 		switch(room) {
 			case "cell" :
@@ -1309,8 +1305,8 @@ class Game extends dn.Process {//}
 				world.addCollision(9,4, 3,1);
 				world.addCollision(3,6, 2,2);
 				world.addCollision(5,6);
-				world.addCollision(10,7, 2,3);
-				world.addCollision(11,6);
+				world.addCollision(11,7, 1,3);
+				// world.addCollision(11,6);
 
 			case "park" :
 				frame = 2;
@@ -1355,6 +1351,7 @@ class Game extends dn.Process {//}
 				#end
 			}
 		refreshWorld();
+		pathFinder.init(world.wid, world.hei, world.collide);
 	}
 
 	function refreshWorld() {
@@ -1372,10 +1369,12 @@ class Game extends dn.Process {//}
 	function showName(i:h2d.Interactive, str:String) {
 		hideName();
 		var tf = makeText(str);
-		wrapper.add(tf,1);
-		tf.x = Std.int( 16*7 - tf.textWidth*tf.scaleX*0.5 );
+		wrapper.add(tf,10);
 		tf.textColor = 0xB8BAC9;
-		tf.x = Std.int( i.x + i.width + 8 );
+		if( i.x<=Const.GAMEZONE_WID*0.5 )
+			tf.x = Std.int( i.x + i.width + 8 );
+		else
+			tf.x = Std.int( i.x - tf.textWidth - 4 );
 		tf.y = Std.int( i.y + i.height*0.5 );
 		tf.alpha = 0;
 		tw.createMs(tf.alpha, 1, TEaseOut, 400);
@@ -1505,20 +1504,29 @@ class Game extends dn.Process {//}
 		if( !fl_pause && !fl_ending ) {
 
 			// Follow path
-			var sx = 0.15;
-			var sy = 0.1;
+			var s = 0.047;
+			// var sx = 0.15;
+			// var sy = 0.1;
 			// #if debug
 			// sx*=2.5;
 			// sy*=2.5;
 			// #end
 			if( playerPath.length>0 ) {
-				var t = playerPath[0];
-				if( player.cx<t.cx ) player.dx = sx;
-				else if( player.cx>t.cx ) player.dx = -sx;
-				else if( player.cy<t.cy ) player.dy = sy;
-				else if( player.cy>t.cy ) player.dy = -sy;
-				else playerPath.shift();
-				if( player.dx==0 && player.dy==0 && playerPath.length==0 && onArrive!=null ) {
+				var tx = ( playerPath[0].cx+0.5 ) * Const.GRID;
+				var ty = ( playerPath[0].cy+0.5 ) * Const.GRID;
+
+				var a = Math.atan2( ty-player.y, tx-player.x );
+				player.dx += Math.cos(a) * s * tmod;
+				player.dy += Math.sin(a) * s * tmod;
+				// if( player.cx<t.cx ) player.dx = sx;
+				// else if( player.cx>t.cx ) player.dx = -sx;
+				// if( player.cy<t.cy ) player.dy = sy;
+				// else if( player.cy>t.cy ) player.dy = -sy;
+
+				if( M.dist(player.x, player.y, tx, ty)<=3 )
+					playerPath.shift();
+
+				if( playerPath.length==0 && onArrive!=null ) {
 					onArrive();
 					onArrive = null;
 					if( playerTarget!=null )
@@ -1528,23 +1536,23 @@ class Game extends dn.Process {//}
 			}
 
 			// Center in cell
-			if( player.dx==0 && player.xr<0.5-sx)
-				player.dx = sx*1.25;
-			if( player.dx==0 && player.xr>0.5+sx)
-				player.dx = -sx*1.25;
+			// if( player.dx==0 && player.xr<0.5-sx)
+			// 	player.dx = sx*1.25;
+			// if( player.dx==0 && player.xr>0.5+sx)
+			// 	player.dx = -sx*1.25;
 
-			if( player.dy==0 && player.yr<0.5-sy )
-				player.dy = sy;
-			if( player.dy==0 && player.yr>0.5+sy )
-				player.dy = -sy;
+			// if( player.dy==0 && player.yr<0.5-sy )
+			// 	player.dy = sy;
+			// if( player.dy==0 && player.yr>0.5+sy )
+			// 	player.dy = -sy;
 
-			if( player.dx==0 && player.dy==0 && playerPath.length==0 ) {
+			if( !player.isMoving() && playerPath.length==0 ) {
 				if( player.spr.anim.isPlaying("walkUp") || player.spr.anim.isPlaying("walkDown") )
 					footStep = 0;
 			}
 			else {
 				// Foot steps sounds
-				footStep-=tmod;
+				footStep-=tmod * walkAnimSpd;
 				if( footStep<=0 ) {
 					if( Std.random(3)==0 )
 						Assets.SOUNDS.footstep1(1);
@@ -1560,6 +1568,12 @@ class Game extends dn.Process {//}
 				if( K.isPressed( a.charCodeAt(0) ) || K.isPressed(K.NUMBER_1+(idx++)) )
 					setPending(a);
 			}
+
+			if( K.isPressed(K.R) && K.isDown(K.SHIFT) ) {
+				Main.ME.startGame();
+				return;
+			}
+
 
 			if( room=="hell" && player.cx<=6 ) {
 				pop("!Lydia!!!");
