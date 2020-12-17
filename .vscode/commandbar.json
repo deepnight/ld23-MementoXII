@@ -1,0 +1,31 @@
+{
+  "skipTerminateQuickPick": true,
+  "skipSwitchToOutput": false,
+  "skipErrorMessage": true,
+  "commands": [
+    {
+      "text": "HL",
+      "color": "cyan",
+      "command": "haxe hl.hxml",
+      "alignment": "right",
+      "skipTerminateQuickPick": false,
+      "priority": 2
+    },
+    {
+      "text": "JS",
+      "color": "cyan",
+      "command": "haxe js.hxml",
+      "alignment": "right",
+      "skipTerminateQuickPick": false,
+      "priority": 1
+    },
+    {
+      "text": "Redist",
+      "color": "yellow",
+      "command": "haxelib run redistHelper hl.hxml js.hxml",
+      "alignment": "right",
+      "skipTerminateQuickPick": false,
+      "priority": 0
+    }
+  ]
+}
