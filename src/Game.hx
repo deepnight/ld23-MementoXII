@@ -39,8 +39,6 @@ class Game extends dn.Process {//}
 	var footstep	: Float;
 
 	var popUp		: Null<h2d.Flow>;
-	// var dragStart	: Null<flash.geom.Point>;
-	// var drag		: flash.display.Sprite;
 	var curName		: Null<h2d.Text>;
 	var roomBg		: HSprite;
 	// var snapshot	: flash.display.Bitmap;
@@ -122,8 +120,6 @@ class Game extends dn.Process {//}
 
 		wrapper = new h2d.Layers(root);
 		wrapper.setScale(Const.SCALE);
-
-		// drag = buffer.dm.empty(99);
 
 		// displace = new flash.display.BitmapData(buffer.width,buffer.height, true, 0x0);
 
@@ -322,25 +318,11 @@ class Game extends dn.Process {//}
 		var m = getMouse();
 		// if( !world.collide(m.cx, m.cy) )
 			// movePlayer(m.cx,m.cy); // TODO
-
-		// #if debug
-		// var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
-		// dragStart = new flash.geom.Point(pt.x, pt.y);
-		// #end
 	}
 
 	function onMouseUp(ev:hxd.Event) {
 		if( fl_pause )
 			return;
-
-		// #if debug
-		// var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
-		// if( pt.x!=dragStart.x || pt.y!=dragStart.y ) {
-		// 	var s = dragStart.x+","+dragStart.y+","+(pt.x-dragStart.x+1)+","+(pt.y-dragStart.y+1);
-		// 	flash.system.System.setClipboard( s );
-		// }
-		// dragStart = null;
-		// #end
 	}
 
 	function addInteractive(o:h2d.Object, events:{ ?over:Void->Void, ?out:Void->Void, ?click:Void->Void }) {
@@ -1426,32 +1408,6 @@ class Game extends dn.Process {//}
 	}
 
 
-	/*
-
-	function onMouseDown(e) {
-		if( fl_pause )
-			return;
-		#if debug
-		var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
-		dragStart = new flash.geom.Point(pt.x, pt.y);
-		#end
-	}
-
-	function onMouseUp(e) {
-		if( fl_pause )
-			return;
-		#if debug
-		var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
-		if( pt.x!=dragStart.x || pt.y!=dragStart.y ) {
-			var s = dragStart.x+","+dragStart.y+","+(pt.x-dragStart.x+1)+","+(pt.y-dragStart.y+1);
-			flash.system.System.setClipboard( s );
-		}
-		dragStart = null;
-		#end
-	}
-
-	*/
-
 	function hideName() {
 		if( curName!=null )
 			curName.parent.removeChild(curName);
@@ -1597,17 +1553,6 @@ class Game extends dn.Process {//}
 		}
 
 		if( !fl_pause && !fl_ending ) {
-
-			#if debug
-			if( dragStart!=null ) {
-				var g = drag.graphics;
-				g.clear();
-				g.lineStyle(1, 0xFFFF00, 1, true, flash.display.LineScaleMode.NONE);
-				var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
-				g.beginFill(0xFF0000,0.5);
-				g.drawRect(dragStart.x, dragStart.y, pt.x-dragStart.x, pt.y-dragStart.y);
-			}
-			#end
 
 			var sx = 0.15;
 			var sy = 0.1;
