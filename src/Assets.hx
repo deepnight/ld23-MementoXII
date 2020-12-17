@@ -11,7 +11,7 @@ class Assets {
 		tiles.setDefaultCenterRatio(0,0);
 
 		tiles.slice("collision",0,  0, 16*2, 8,8);
-		tiles.slice("separator",0,  0,16*3, 16*7,16, 2);
+		tiles.slice("separator",0,  0,16*3, 16*8,16, 2);
 		tiles.slice("cell",0,  0,16*4, 16*7,16*5, 1, 4);
 
 		tiles.slice("picPart1",0,  7*16,5*16, 16,16);

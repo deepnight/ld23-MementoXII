@@ -19,7 +19,7 @@ class Game extends dn.Process {//}
 	static final OPEN = "Open";
 	static final CLOSE = "Close";
 	static final REMEMBER = "Remember";
-	static final HELP = "I'm stuck";
+	static final HELP = "I'm stuck!";
 	static final ABOUT = "About";
 
 	public var wrapper : h2d.Layers;
@@ -40,8 +40,8 @@ class Game extends dn.Process {//}
 	var popUp		: Null<h2d.Flow>;
 	var curName		: Null<h2d.Text>;
 	var roomBg		: HSprite;
-	var invCont		: h2d.Object;
-	var invSep		: HSprite;
+	var invCont		: h2d.Flow;
+	var invSep1		: HSprite;
 	var invSep2		: HSprite;
 	var actionsWrapper : h2d.Object;
 	var miscWrapper : h2d.Flow;
@@ -135,14 +135,14 @@ class Game extends dn.Process {//}
 		player.spr.anim.registerStateAnim("standDown", 0, ()->player.dirY==1);
 		player.spr.anim.registerStateAnim("standUp", 0, ()->player.dirY==-1);
 
-		var s = Assets.tiles.h_get("separator", 1);
-		wrapper.add(s, 3);
-		invSep2 = s;
+		invSep1 = Assets.tiles.h_get("separator", 0);
+		wrapper.add(invSep1, 3);
+		invSep1.setCenterRatio(0,0.7);
 
-		var s = Assets.tiles.h_get("separator", 0);
-		wrapper.add(s, 3);
-		s.y = 108;
-		invSep = s;
+		invSep2 = Assets.tiles.h_get("separator", 1);
+		wrapper.add(invSep2, 3);
+		invSep2.setCenterRatio(0,0.3);
+
 
 		Boot.ME.s2d.addEventListener(onEvent);
 
@@ -160,7 +160,7 @@ class Game extends dn.Process {//}
 		wrapper.add(miscWrapper, 1);
 		miscWrapper.minWidth = Const.GAMEZONE_WID;
 		miscWrapper.horizontalAlign = Middle;
-		miscWrapper.horizontalSpacing = 8;
+		miscWrapper.horizontalSpacing = 16;
 		miscWrapper.y = 108;
 
 		var alist = [LOOK, REMEMBER, USE, PICK, OPEN, CLOSE, HELP];
@@ -482,31 +482,35 @@ class Game extends dn.Process {//}
 		if( invCont!=null )
 			invCont.remove();
 
-		invCont = new h2d.Object();
-		invCont.x = 20;
-		invCont.y = 116;
+		invCont = new h2d.Flow();
+		invCont.layout = Vertical;
+		invCont.x = 0;
+		invCont.y = 132;
+		invCont.minWidth = Const.GAMEZONE_WID;
+		invCont.minHeight = 12;
+		invCont.horizontalAlign = Middle;
 		invCont.alpha = old;
 		wrapper.add(invCont, 1);
 
 		var a = if( inventory.length==0 ) 0.3 else 1;
-		//invCont.alpha = invSep.alpha = invSep2.alpha = a;
 		tw.createMs(invCont.alpha, a);
-		tw.createMs(invSep.alpha, a);
+		tw.createMs(invSep1.alpha, a);
 		tw.createMs(invSep2.alpha, a);
-		invSep2.y = invSep.y + Math.max(20, 14+inventory.length*6);
 
 		var n = 1;
 		for(i in inventory) {
 			var name = INAMES.get(i);
-			var tf = makeText( if(name!=null) name else "!!"+i+"!!" );
+			var tf = makeText( name!=null ? name : "!!"+i+"!!" );
 			tf.textColor = 0x957E51;
-			tf.y = n*18;
-			// tf.filters = [
-			// 	new flash.filters.DropShadowFilter(2,90, 0xC8B899, 1,0,0, 10,1, true),
-			// ];
 			invCont.addChild(tf);
 			n++;
 		}
+
+		invSep1.x = invCont.x-8;
+		invSep1.y = invCont.y;
+
+		invSep2.x = invCont.x-8;
+		invSep2.y = invCont.y + invCont.outerHeight;
 	}
 
 	function getMouse() {
@@ -581,47 +585,7 @@ class Game extends dn.Process {//}
 			return [];
 		else
 			return pathFinder.getPath(x,y, tx,ty);
-			// return astar(x,y, tx,ty);
 	}
-
-	/*
-	function astar(x,y, tx,ty, ?branch:Array<{x:Int,y:Int}>, ?tags:Array<Bool>, ?best:Array<{x:Int,y:Int}>, ?tries=0) : Array<{x:Int,y:Int}> {
-		if ( branch==null )
-			branch = new Array();
-		if ( tags==null )
-			tags = new Array();
-		if ( best!=null && best.length<branch.length )
-			return null;
-		tags[getId(x,y)] = true;
-		if (x==tx && y==ty)
-			return branch;
-
-		if( tries>1000)
-			return null;
-
-		var neig = new Array();
-		if (tx<x)	neig.insert(0, { xd:-1,yd:0 } )	else neig.push( { xd:-1,yd:0 } );
-		if (tx>x)	neig.insert(0, { xd:1,yd:0 } )	else neig.push( { xd:1,yd:0 } );
-		if (ty<y)	neig.insert(0, { xd:0,yd:-1 } )	else neig.push( { xd:0,yd:-1 } );
-		if (ty>y)	neig.insert(0, { xd:0,yd:1 } )	else neig.push( { xd:0,yd:1 } );
-
-		for (n in neig) {
-			var pt = { x:x+n.xd, y:y+n.yd };
-			var id = getId(pt.x, pt.y);
-			if ( tags[id]!=true && !world.collide(pt.x, pt.y) ) {
-				tags[id] = true;
-				var nextBranch = astar(pt.x, pt.y, tx,ty, branch.concat([{x:pt.x, y:pt.y}]), tags.copy(), best, tries+1);
-				if ( nextBranch != null && (best==null || best.length>nextBranch.length) )
-					best = nextBranch;
-			}
-		}
-		return best;
-	}
-
-	inline function getId(x,y) {
-		return y*world.wid + x;
-	}
-	*/
 
 
 	function initHotSpots() {
@@ -1153,8 +1117,8 @@ class Game extends dn.Process {//}
 	function getTip() {
 		Assets.SOUNDS.help(1);
 		if( !hasTriggerSet("usedTip") ) {
-			pop("You can use this option to get help if you are stuck in the game. But please, don't use too much!");
-			pop("!Each time you click on HELP, you will get the solution to current situation.");
+			pop("You can use this option to get help if you are stuck in the game.");
+			pop("!From now on, every time you'll click on HELP, you will get a tip for current situation.");
 		}
 		if( !hasTrigger("framed") && !hasItem("picture") )
 			pop("You should first concentrate on finding the 3 photo fragments.");
