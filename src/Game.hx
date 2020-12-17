@@ -310,6 +310,7 @@ class Game extends dn.Process {//}
 
 		onArrive = null;
 		var m = getMouse();
+		trace(m);
 		if( !world.collide(m.cx, m.cy) )
 			movePlayer(m.cx,m.cy);
 	}
@@ -514,8 +515,8 @@ class Game extends dn.Process {//}
 	}
 
 	function getMouse() {
-		var x = Std.int( Boot.ME.s2d.mouseX / Const.SCALE );
-		var y = Std.int( Boot.ME.s2d.mouseY / Const.SCALE );
+		var x = Std.int( Boot.ME.s2d.mouseX / Const.SCALE - wrapper.x );
+		var y = Std.int( Boot.ME.s2d.mouseY / Const.SCALE - wrapper.y );
 		var cx = Std.int( x/Const.GRID );
 		var cy = Std.int( y/Const.GRID );
 
