@@ -38,7 +38,6 @@ class Game extends dn.Process {//}
 
 	var footstep	: Float;
 
-	// var menu		: Null<flash.display.Sprite>;
 	var popUp		: Null<h2d.Flow>;
 	// var dragStart	: Null<flash.geom.Point>;
 	// var drag		: flash.display.Sprite;
@@ -1473,41 +1472,6 @@ class Game extends dn.Process {//}
 		curName = tf;
 		curName.visible = !fl_pause && !fl_lockControls;
 	}
-	/*
-	//function closeActions() {
-		//if( menu!=null ) {
-			//menu.parent.removeChild(menu);
-			//menu = null;
-		//}
-	//}
-
-	//function actionMenu(hs:Hotspot) {
-		//closeActions();
-		//if( fl_pause )
-			//return;
-		//menu = new flash.display.Sprite();
-		//root.addChild(menu);
-		//menu.x = Std.int(root.mouseX+10);
-		//menu.y = Std.int(root.mouseY);
-		//var y = 0.;
-		//
-		//for(a in [LOOK, PICK, USE]) {
-			//var s = makeButton(a);
-			//s.y = Std.int(y);
-			//menu.addChild(s);
-			//if( hs.act.exists(a) ) {
-				//var res = hs.act.get(a);
-				//if( Type.typeof(res)==ValueType.TFunction )
-					//s.addEventListener(flash.events.MouseEvent.CLICK, function(_) {
-						//closeActions();
-						//res();
-					//});
-				//else
-					//s.addEventListener(flash.events.MouseEvent.CLICK, function(e) pop(res) );
-			//}
-			//y+=s.height-6;
-		//}
-	//}
 
 	function makeText(str:String, ?multiLine=false) {
 		var tf = new flash.text.TextField();
