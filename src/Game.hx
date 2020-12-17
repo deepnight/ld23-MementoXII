@@ -72,7 +72,7 @@ class Game extends dn.Process {//}
 
 		createRoot(Main.ME.root);
 		ME = this;
-		new h2d.Bitmap( h2d.Tile.fromColor(0x0, Const.WID, Const.HEI), root );
+		new h2d.Bitmap( h2d.Tile.fromColor(#if debug 0x151515 #else 0x0 #end, Const.WID, Const.HEI), root );
 
 		actions = new List();
 		fl_pause = false;
@@ -88,10 +88,9 @@ class Game extends dn.Process {//}
 		pathFinder = new dn.pathfinder.AStar( (x,y)->{ cx:x, cy:y } );
 
 		INAMES.set("picture", "Old photograph");
-		INAMES.set("picPart1", "photograph fragment (1)");
-		INAMES.set("picPart2", "photograph fragment (2)");
-		INAMES.set("picPart3", "photograph fragment (3)");
-		INAMES.set("picPart3", "photograph fragment (3)");
+		INAMES.set("picPart1", "Ripped photo (1/3)");
+		INAMES.set("picPart2", "Ripped photo (2/3)");
+		INAMES.set("picPart3", "Ripped photo (3/3)");
 		INAMES.set("chestKey", "Small copper key");
 		INAMES.set("knife", "Blunt knife");
 		INAMES.set("ring", "Wedding ring");
@@ -100,21 +99,21 @@ class Game extends dn.Process {//}
 		INAMES.set("finalLetter", "A letter");
 
 		room = "cell";
-		// #if debug
-		// room = "park";
-		// //inventory.add("picPart1");
-		// triggers.set("phoneDropped",1);
-		// triggers.set("letterPop",1);
-		// //triggers.set("sinkClean",1);
-		// //inventory.add("broom");
-		// //inventory.add("knife");
-		// inventory.add("ring");
-		// inventory.add("chestKey");
-		// triggers.set("framed",1);
-		// triggers.set("foundChest",1);
-		// //triggers.set("sinkClean",1);
-		// //triggers.set("sinkOpen",1);
-		// #end
+		#if debug
+		room = "park";
+		//inventory.add("picPart1");
+		triggers.set("phoneDropped",1);
+		triggers.set("letterPop",1);
+		//triggers.set("sinkClean",1);
+		//inventory.add("broom");
+		//inventory.add("knife");
+		inventory.add("ring");
+		inventory.add("chestKey");
+		triggers.set("framed",1);
+		triggers.set("foundChest",1);
+		//triggers.set("sinkClean",1);
+		//triggers.set("sinkOpen",1);
+		#end
 
 		wrapper = new h2d.Layers(root);
 		wrapper.x = Std.int( Const.WID*0.5 - Const.GAMEZONE_WID*0.5 );
@@ -351,7 +350,7 @@ class Game extends dn.Process {//}
 		tf.text = str;
 		tf.filter = new dn.heaps.filter.PixelOutline();
 		if( multiline )
-			tf.maxWidth = 128;
+			tf.maxWidth = Const.GAMEZONE_WID-15;
 		return tf;
 	}
 
@@ -483,11 +482,12 @@ class Game extends dn.Process {//}
 
 		invCont = new h2d.Flow();
 		invCont.layout = Vertical;
-		invCont.x = 0;
+		invCont.x = 2;
 		invCont.y = 132;
 		invCont.minWidth = Const.GAMEZONE_WID;
 		invCont.minHeight = 12;
 		invCont.horizontalAlign = Middle;
+		invCont.verticalSpacing = 1;
 		invCont.alpha = old;
 		wrapper.add(invCont, 1);
 
@@ -513,7 +513,7 @@ class Game extends dn.Process {//}
 	}
 
 	function getMouse() {
-		var x = Std.int( Boot.ME.s2d.mouseX / Const.SCALE - wrapper.x );
+		var x = Std.int( ( Boot.ME.s2d.mouseX - root.x) / Const.SCALE - wrapper.x );
 		var y = Std.int( Boot.ME.s2d.mouseY / Const.SCALE - wrapper.y );
 		var cx = Std.int( x/Const.GRID );
 		var cy = Std.int( y/Const.GRID );
@@ -1162,6 +1162,7 @@ class Game extends dn.Process {//}
 		// Display old view in front of current & fade it away
 		var snapshot = new h2d.Bitmap();
 		root.add(snapshot, 99);
+		snapshot.x = -root.x/Const.SCALE;
 		snapshot.tile = h2d.Tile.fromTexture( snapshotTex );
 		snapshot.setScale(1/Const.SCALE);
 		tw.createMs(snapshot.alpha, 0, TEaseIn, d*0.8);
@@ -1256,7 +1257,9 @@ class Game extends dn.Process {//}
 			"by Sebastien Benard",
 			"",
 			"Thank you for playing!",
-			"Please visit DEEPNIGHT.NET :)",
+			"Please visit DEEPNIGHT.NET",
+			"",
+			":)",
 		];
 		var n = 0;
 		for(t in list) {
@@ -1373,11 +1376,14 @@ class Game extends dn.Process {//}
 		var tf = makeText(str);
 		wrapper.add(tf,10);
 		tf.textColor = 0xB8BAC9;
-		if( i.x<=Const.GAMEZONE_WID*0.5 )
-			tf.x = Std.int( i.x + i.width + 3 );
-		else
-			tf.x = Std.int( i.x - tf.textWidth - 3 );
-		tf.y = Std.int( i.y + i.height*0.5 );
+		// if( i.x<=Const.GAMEZONE_WID*0.5 )
+		// 	tf.x = Std.int( i.x + i.width + 3 );
+		// else
+		// 	tf.x = Std.int( i.x - tf.textWidth - 3 );
+		// tf.y = Std.int( i.y + i.height*0.5 );
+		tf.x = Std.int( i.x+i.width*0.5 - tf.textWidth*0.5 );
+		tf.y = i.y-tf.textHeight;
+		// if( i.y<=30)
 		tf.alpha = 0;
 		tw.createMs(tf.alpha, 1, TEaseOut, 400);
 
