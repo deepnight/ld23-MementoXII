@@ -1,8 +1,8 @@
 typedef Hotspot = {
-	var hit		: h2d.Graphics;
-	var spr		: Null<HSprite>;
-	var name	: String;
-	var act		: Map<String, Dynamic>;
+	var i : h2d.Interactive;
+	var spr : Null<HSprite>;
+	var name : String;
+	var act : Map<String, Dynamic>;
 }
 
 class Game extends dn.Process {//}
@@ -45,7 +45,7 @@ class Game extends dn.Process {//}
 	var curName		: Null<h2d.Text>;
 	var roomBg		: HSprite;
 	// var snapshot	: flash.display.Bitmap;
-	// var invCont		: flash.display.Sprite;
+	var invCont		: h2d.Object;
 	var invSep		: HSprite;
 	var invSep2		: HSprite;
 	var controlsCont: h2d.Object;
@@ -157,7 +157,7 @@ class Game extends dn.Process {//}
 		for(a in alist) {
 			var tf = makeText(a);
 			controlsCont.addChild(tf);
-			tf.x = 11 + x*92;
+			tf.x = 11 + x*46;
 			tf.y = 16*5 + y*17;
 			if( a==ABOUT ) {
 				tf.y+= 17;
@@ -173,6 +173,20 @@ class Game extends dn.Process {//}
 				tf.textColor = 0x668275;
 			}
 			tf.alpha = 0.6;
+			addInteractive(tf, {
+				over: ()->{
+					if( !fl_lockControls )
+						tf.alpha = 1;
+				},
+				out: ()->{
+					if( tf.text!=pending )
+						tf.alpha = 0.6;
+				},
+				click: ()->{
+					if( !fl_lockControls )
+						setPending(a);
+				},
+			});
 			// TODO
 			// tf.addEventListener(flash.events.MouseEvent.MOUSE_OVER, function(_) {
 			// 	if( !fl_lockControls )
@@ -194,15 +208,15 @@ class Game extends dn.Process {//}
 			actions.add(tf);
 		}
 
-		// setPending(); // TODO
+		setPending();
 
 		addHotSpots();
 		// updateInventory(); // TODO
 
 		Assets.SOUNDS.ambiant().play(true);
 
-		// #if !debug
 		// Intro
+		#if !debug
 		root.alpha = 0;
 		tw.createMs(root.alpha, 1, 2000);
 		dispScale = 0.5;
@@ -231,7 +245,7 @@ class Game extends dn.Process {//}
 				player.update();
 			}
 		}
-		// #end
+		#end
 	}
 
 
@@ -246,10 +260,13 @@ class Game extends dn.Process {//}
 	}
 
 	function onEvent(ev:hxd.Event) {
-		trace(ev.kind);
 		switch ev.kind {
 			case EPush:
+				onMouseDown(ev);
+
 			case ERelease:
+				onMouseUp(ev);
+
 			case EMove:
 			case EOver:
 			case EOut:
@@ -261,6 +278,58 @@ class Game extends dn.Process {//}
 			case EReleaseOutside:
 			case ETextInput:
 			case ECheck:
+		}
+	}
+
+	function onMouseDown(ev:hxd.Event) {
+		if( fl_pause )
+			return;
+
+		// #if debug
+		// var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
+		// dragStart = new flash.geom.Point(pt.x, pt.y);
+		// #end
+	}
+
+	function onMouseUp(ev:hxd.Event) {
+		if( fl_pause )
+			return;
+
+		// #if debug
+		// var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
+		// if( pt.x!=dragStart.x || pt.y!=dragStart.y ) {
+		// 	var s = dragStart.x+","+dragStart.y+","+(pt.x-dragStart.x+1)+","+(pt.y-dragStart.y+1);
+		// 	flash.system.System.setClipboard( s );
+		// }
+		// dragStart = null;
+		// #end
+	}
+
+	function addInteractive(o:h2d.Object, events:{ ?over:Void->Void, ?out:Void->Void, ?click:Void->Void }) {
+		// Create interactive
+		var b = o.getBounds(wrapper);
+		var i = new h2d.Interactive(b.width,b.height,wrapper);
+		// i.backgroundColor = 0x66ff00ff;
+		i.setPosition(o.x, o.y);
+
+		// Bind events
+		if( events.click!=null ) i.onClick = (_)->events.click();
+		if( events.over!=null ) i.onOver = (_)->events.over();
+		if( events.out!=null ) i.onOut = (_)->events.out();
+
+		// Track object & refresh
+		var p = createChildProcess();
+		p.onUpdateCb = ()->{
+			if( o.parent==null ) {
+				p.destroy();
+				i.remove();
+				return;
+			}
+			o.getBounds(wrapper, b);
+			i.x = o.x;
+			i.y = o.y;
+			i.width = b.width;
+			i.height = b.height;
 		}
 	}
 
@@ -287,36 +356,38 @@ class Game extends dn.Process {//}
 	}
 
 
-	/*
-
 	function setPending(?a:String) {
-		//if( fl_pause )
-			//return;
 		for( tf in actions ) {
+			tf.filter = null;
 			tf.alpha = 0.6;
-			tf.filters = [];
 		}
+
 		if( a==HELP ) {
 			getTip();
 			return;
 		}
+
 		if( a==ABOUT ) {
-			SOUNDS.select.play();
+			Assets.SOUNDS.select(1);
 			pop("This game was completely developed by Sebastien \"deepnight\" Benard in 48h for the Ludum Dare competition (theme: \"Tiny World\").");
 			pop("@Visit BLOG.DEEPNIGHT.NET for more games :)");
 			return;
 		}
 		if( a!=pending )
-			SOUNDS.select.play();
+			Assets.SOUNDS.select(1);
+
 		if( a==null )
 			a = LOOK;
+
 		pending = a;
 		for(tf in actions)
 			if( tf.text==a ) {
 				tf.alpha = 1;
-				tf.filters = [ new flash.filters.GlowFilter(0x5E6F93,1, 4,4, 10) ];
+				tf.filter = new dn.heaps.filter.PixelOutline(0x5e6f93);
 			}
 	}
+
+	/*
 
 	function movePlayer(cx,cy) {
 		var pt = getClosest(cx,cy);
@@ -327,11 +398,13 @@ class Game extends dn.Process {//}
 		return playerPath.length>0;
 	}
 
+	*/
+
 	function setTrigger(k, ?n=1) {
 		triggers.set(k,n);
 		refreshWorld();
 		if( k=="kitchenLeftOpen" || k=="kitchenRightOpen" )
-			SOUNDS.door.play();
+			Assets.SOUNDS.door(1);
 	}
 	function getTrigger(k) {
 		return if( triggers.exists(k) ) triggers.get(k) else 0;
@@ -358,10 +431,10 @@ class Game extends dn.Process {//}
 	function removeItem(k:String) {
 		inventory.remove(k);
 		updateInventory();
-
 	}
+
 	function addItem(k:String) {
-		SOUNDS.pick.play();
+		Assets.SOUNDS.pick(1);
 		inventory.add(k);
 		refreshWorld();
 		if( hasItem("picPart1") && hasItem("picPart2") && hasItem("picPart3") && !hasTrigger("gotPicture") ) {
@@ -370,7 +443,7 @@ class Game extends dn.Process {//}
 			removeItem("picPart3");
 			addItem("picture");
 			setTrigger("gotPicture");
-			SOUNDS.success.play();
+			Assets.SOUNDS.success(1);
 			pop("You assembled the 3 parts and now have restored the picture.");
 		}
 		updateInventory();
@@ -379,19 +452,19 @@ class Game extends dn.Process {//}
 	function updateInventory() {
 		var old = if( invCont!=null ) invCont.alpha else 0;
 		if( invCont!=null )
-			invCont.parent.removeChild(invCont);
+			invCont.remove();
 
-		invCont = new flash.display.Sprite();
+		invCont = new h2d.Object();
 		invCont.x = 20;
-		invCont.y = 116*UPSCALE;
+		invCont.y = 116;
 		invCont.alpha = old;
-		dm.add(invCont, 1);
+		wrapper.add(invCont, 1);
 
 		var a = if( inventory.length==0 ) 0.3 else 1;
 		//invCont.alpha = invSep.alpha = invSep2.alpha = a;
-		tw.create(invCont, "alpha", a);
-		tw.create(invSep, "alpha", a);
-		tw.create(invSep2, "alpha", a);
+		tw.createMs(invCont.alpha, a);
+		tw.createMs(invSep.alpha, a);
+		tw.createMs(invSep2.alpha, a);
 		invSep2.y = invSep.y + Math.max(20, 14+inventory.length*6);
 
 		var n = 1;
@@ -399,21 +472,16 @@ class Game extends dn.Process {//}
 			var name = INAMES.get(i);
 			var tf = makeText( if(name!=null) name else "!!"+i+"!!" );
 			tf.textColor = 0x957E51;
-			var f = tf.getTextFormat();
-			f.align = flash.text.TextFormatAlign.CENTER;
-			tf.setTextFormat(f);
-			//tf.scaleX = tf.scaleY = 1;
 			tf.y = n*18;
-			tf.width = 9*16;
-			tf.filters = [
-				//new flash.filters.GlowFilter(0xad9769, 0.3, 4,4, 10),
-				new flash.filters.DropShadowFilter(2,90, 0xC8B899, 1,0,0, 10,1, true),
-			];
+			// tf.filters = [
+			// 	new flash.filters.DropShadowFilter(2,90, 0xC8B899, 1,0,0, 10,1, true),
+			// ];
 			invCont.addChild(tf);
 			n++;
 		}
 	}
 
+	/*
 	function runPending(hs:Hotspot) {
 		if( fl_pause )
 			return;
@@ -521,16 +589,17 @@ class Game extends dn.Process {//}
 	inline function getId(x,y) {
 		return y*world.wid + x;
 	}
-
 	*/
+
 	function addHotSpots() {
-		/*
+		// Cleanup
 		for(hs in hotSpots) {
-			hs.hit.parent.removeChild(hs.hit);
+			hs.i.remove();
 			if( hs.spr!=null )
-				hs.spr.parent.removeChild(hs.spr);
+				hs.spr.remove();
 		}
 		hotSpots = new Array();
+
 
 		if( room!="hell" ) {
 			addSpot(16,27,26,7, "A rusty pipe");
@@ -570,7 +639,7 @@ class Game extends dn.Process {//}
 
 			if( !hasItem("picPart1") && !hasTrigger("gotPicture") ) {
 				addSpot(57,24,6,7, "A torn photograph");
-				setSprite( Assets.tiles.getSprite("picPart1") );
+				setSprite( Assets.tiles.h_get("picPart1") );
 				setAction(LOOK, "An old picture, totally torn...");
 				setAction(REMEMBER, "I don't remember anything about this picture... I should look for the other parts.");
 				setAction(PICK, function() {
@@ -585,7 +654,7 @@ class Game extends dn.Process {//}
 					setAction(USE, function() {
 						pop("You put the photograph back in its frame. It fits perfectly.");
 						setTrigger("framed");
-						SOUNDS.success.play();
+						Assets.SOUNDS.success(1);
 						removeItem("picture");
 					});
 				else
@@ -596,13 +665,13 @@ class Game extends dn.Process {//}
 			}
 			else {
 				addSpot(52,22,5,6, "A very old photograph");
-				setSprite( Assets.tiles.getSprite("framed") );
+				setSprite( Assets.tiles.h_get("framed") );
 				setAction(LOOK, "The photograph is very old and damaged. The character on the picture is barely recognizable. A woman?");
 				setAction(PICK, "No, this picture is in its place.");
 				setAction(REMEMBER, function() {
 					if( !hasTriggerSet("firstMemory") ) {
 						pop("The photograph is very old and damaged. The character on the picture is barely recognizable. A woman?|...|Lydia?");
-						afterPop = callback(changeRoom,"kitchen");
+						afterPop = changeRoom.bind("kitchen");
 					}
 					else
 						changeRoom("kitchen");
@@ -621,12 +690,12 @@ class Game extends dn.Process {//}
 
 			if( !hasTrigger("calendar") ) {
 				addSpot(40,20,8,9, "An old calendar");
-				setSprite( Assets.tiles.getSprite("calendar") );
+				setSprite( Assets.tiles.h_get("calendar") );
 				setAction(LOOK, "This calendar is from other times... Even the year print has almost completely disappeared.|!...Hey, is there some kind of hole behind it?");
 				setAction(REMEMBER, "I think SOMEONE bought me this calendar when I was sent in here.");
 				var f = function() {
 					setTrigger("calendar");
-					SOUNDS.smallHit.play();
+					Assets.SOUNDS.smallHit(1);
 					pop("As you pull the calendar, you reveal a hole hidden behind it...");
 				}
 				setAction(USE, f);
@@ -652,7 +721,7 @@ class Game extends dn.Process {//}
 
 			if( !hasItem("picPart3") && !hasTrigger("gotPicture") ) {
 				addSpot(88,25,5,6, "Some sort of paper");
-				setSprite( Assets.tiles.getSprite("picPart3") );
+				setSprite( Assets.tiles.h_get("picPart3") );
 				setAction(LOOK, "The fragment of a torn photograph is hidden under the bolster.");
 				setAction(REMEMBER, "How did it get there?");
 				setAction(PICK, function() {
@@ -667,11 +736,11 @@ class Game extends dn.Process {//}
 
 			addSpot(14,64,8,12, "Sink");
 			if( hasTrigger("sinkOpen") ) {
-				var s = Assets.tiles.getSprite("sinkWater");
+				var s = Assets.tiles.h_get("flow");
 				setSprite(s);
 				s.x+=1;
 				s.y+=3;
-				s.playAnim("flow");
+				s.anim.play("flow");
 			}
 			if( !hasTrigger("sinkClean") ) {
 				setAction(PICK, "I need a tool or something.");
@@ -686,11 +755,11 @@ class Game extends dn.Process {//}
 					setAction(LOOK, "The water is not exactly clear.");
 				setAction(OPEN, function() {
 					setTrigger("sinkOpen");
-					SOUNDS.robinet.play();
+					Assets.SOUNDS.robinet(1);
 				});
 				setAction(CLOSE, function() {
 					setTrigger("sinkOpen",0);
-					SOUNDS.robinet.play();
+					Assets.SOUNDS.robinet(1);
 				});
 			}
 			if( !hasTrigger("sinkOpen") )
@@ -709,16 +778,16 @@ class Game extends dn.Process {//}
 					pop("Using the knife, you manage to remove the thing blocking the sink.");
 					pop("You take out lots of dirt. Trapped inside, you find a KEY.");
 					setTrigger("sinkClean");
-					SOUNDS.success.play();
+					Assets.SOUNDS.success(1);
 					addItem("cupKey");
 				});
 
 			addSpot(89,41,6,6, "Small wooden case");
 			if( hasTrigger("ringBack") ) {
-				var s = setSprite( Assets.tiles.getSprite("ringBack") );
+				var s = setSprite( Assets.tiles.h_get("ringBack") );
 				s.x+=1;
 				s.y+=1;
-				setAction(REMEMBER, callback(changeRoom, "park"));
+				setAction(REMEMBER, changeRoom.bind("park"));
 			}
 			else
 				setAction(REMEMBER, "I'm pretty sure it was not normally empty.|But where is its content?");
@@ -730,7 +799,7 @@ class Game extends dn.Process {//}
 			if( hasItem("ring") )
 				setAction(USE, function() {
 					pop("You put Lydia's ring back in its case.");
-					SOUNDS.success.play();
+					Assets.SOUNDS.success(1);
 					removeItem("ring");
 					setTrigger("ringBack");
 				});
@@ -744,12 +813,12 @@ class Game extends dn.Process {//}
 			setAction(REMEMBER, function() {
 				pop("Lydia...|As beautiful as in my memories.");
 				if( EXTENDED )
-					afterPop = callback(changeRoom,"cell");
+					afterPop = changeRoom.bind("cell");
 			});
 
 			addSpot(42,29,8,6, "Sideboard left door");
 			if( hasTrigger("kitchenLeftOpen") ) {
-				setSprite( Assets.tiles.getSprite("kitchenDoor") );
+				setSprite( Assets.tiles.h_get("kitchenDoor") );
 				setAction(LOOK, "All kind of silverware, plates and things like that.");
 				setAction(REMEMBER, "I used to be the chef of the house...");
 			}
@@ -763,13 +832,13 @@ class Game extends dn.Process {//}
 
 			addSpot(51,29,8,6, "Sideboard right door");
 			if( hasTrigger("kitchenRightOpen") ) {
-				setSprite( Assets.tiles.getSprite("kitchenDoor") );
+				setSprite( Assets.tiles.h_get("kitchenDoor") );
 				if( !hasTrigger("foundChest") ) {
 					setAction(LOOK, function() {
 						pop("Cups, thousands of spoons and a tea set.|!You also found a STEEL CHEST inside the sideboard.");
 						afterPop = function() {
 							setTrigger("foundChest");
-							SOUNDS.hit.play();
+							Assets.SOUNDS.hit(1);
 						}
 					});
 				}
@@ -795,13 +864,13 @@ class Game extends dn.Process {//}
 
 			if( !hasTrigger("rememberTable") ) {
 				addSpot(31,48,10,13, "Tablecloth");
-				setSprite( Assets.tiles.getSprite("kitchenTable", 0) );
+				setSprite( Assets.tiles.h_get("kitchenTable", 0) );
 				setAction(LOOK, "Very old. And completely stained.|!As you touch the surface, you feel something underneath...");
 				setAction(REMEMBER, "It's so old that I think Lydia even bought it before we met.|!I remember she had the habit to hide... SOMETHING underneath...");
 				var f = function() {
 					pop("You remove the tablecloth...");
 					afterPop = function() {
-						SOUNDS.smallHit.play();
+						Assets.SOUNDS.smallHit(1);
 						pop("...revealing a small key.");
 						//setTrigger("foundKey");
 						setTrigger("rememberTable");
@@ -819,7 +888,7 @@ class Game extends dn.Process {//}
 			else {
 				if( !hasTrigger("foundKey") ) {
 					addSpot(34,47,6,6, "Small key");
-					setSprite( Assets.tiles.getSprite("kitchenTable", 1) );
+					setSprite( Assets.tiles.h_get("kitchenTable", 1) );
 					setAction(LOOK, "A small ornamented key is laying on the table. Probably made of copper.");
 					setAction(REMEMBER, "I used to play for long hours with this key.|What was it used for?");
 					setAction(PICK, function() {
@@ -832,7 +901,7 @@ class Game extends dn.Process {//}
 
 			if( hasTrigger("foundChest") ) {
 				addSpot(40,34,13,11, "A steel chest");
-				setSprite( Assets.tiles.getSprite("kitchenChest", hasTrigger("openChest") ? 1 : 0) );
+				setSprite( Assets.tiles.h_get("kitchenChest", hasTrigger("openChest") ? 1 : 0) );
 				if( !hasTrigger("openChest") )
 					setAction(LOOK, "It seems sturdy. And it's locked.");
 				else {
@@ -847,13 +916,13 @@ class Game extends dn.Process {//}
 					}
 					setAction(CLOSE, function() {
 						setTrigger("openChest",0);
-						SOUNDS.hit.play();
+						Assets.SOUNDS.hit(1);
 					});
 				}
 				setAction(REMEMBER, "I put something important in it...|And I wanted it to stay away from me.");
 				if( hasTrigger("unlockedChest") )
 					setAction(OPEN, function() {
-						SOUNDS.smallHit.play();
+						Assets.SOUNDS.smallHit(1);
 						setTrigger("openChest");
 					});
 				else if( !hasItem("chestKey") )
@@ -861,7 +930,7 @@ class Game extends dn.Process {//}
 				else {
 					setAction(OPEN, function() {
 						pop("You use the copper key...|It clicks and opens.");
-						SOUNDS.smallHit.play();
+						Assets.SOUNDS.smallHit(1);
 						removeItem("chestKey");
 						setTrigger("openChest");
 						setTrigger("unlockedChest");
@@ -879,7 +948,7 @@ class Game extends dn.Process {//}
 
 			if( !hasItem("knife") ) {
 				addSpot(25,48,6,6, "Knife");
-				setSprite( Assets.tiles.getSprite("kitchenKnife") );
+				setSprite( Assets.tiles.h_get("kitchenKnife") );
 				setAction(LOOK, "A basic steel knife. The edge became (or got) blunt.|Might be useful.");
 				setAction(USE, "This won't cut anything... But it might become handy.");
 				setAction(PICK, function() {
@@ -890,7 +959,7 @@ class Game extends dn.Process {//}
 
 			addSpot(86,53,12,25, "Cupboard");
 			if( hasTrigger("openCup") ) {
-				setSprite( Assets.tiles.getSprite("cupDoors") ).x-=4;
+				setSprite( Assets.tiles.h_get("cupDoors") ).x-=4;
 				if( !hasItem("broom") )
 					setAction(LOOK, function() {
 						pop("The cupboard contains various chemicals and upkeep products.");
@@ -912,7 +981,7 @@ class Game extends dn.Process {//}
 				if( !hasTrigger("unlockedCup") ) {
 					setAction(OPEN, function() {
 						setTrigger("openCup");
-						SOUNDS.door.play();
+						Assets.SOUNDS.door(1);
 						setTrigger("unlockedCup");
 						removeItem("cupKey");
 						pop("The key fits perfectly and the cupboard opens creaking.");
@@ -921,11 +990,11 @@ class Game extends dn.Process {//}
 				else {
 					setAction(OPEN, function() {
 						setTrigger("openCup");
-						SOUNDS.door.play();
+						Assets.SOUNDS.door(1);
 					});
 					setAction(CLOSE, function() {
 						setTrigger("openCup",0);
-						SOUNDS.door.play();
+						Assets.SOUNDS.door(1);
 					});
 				}
 			}
@@ -952,17 +1021,17 @@ class Game extends dn.Process {//}
 
 			if( hasTrigger("letterPop") && !hasItem("finalLetter") ) {
 				addSpot(69,41,7,7, "A letter");
-				setSprite( Assets.tiles.getSprite("finalLetter") );
+				setSprite( Assets.tiles.h_get("finalLetter") );
 				setAction(LOOK, "A letter.|The writing seems to be... mine.");
 				setAction(REMEMBER, "Did I write this letter ?");
 				var f = function() {
 					addItem("finalLetter");
 					heroFade.visible = true;
 					heroFade.alpha = 0;
-					tw.create(heroFade, "alpha", 0.5, TEaseIn, 1500);
+					tw.createMs(heroFade.alpha, 0.5, TEaseIn, 1500);
 					pop("You take the letter and start to read it.");
-					player.spr.stopAnim(0);
-					player.spr.playAnim("read");
+					player.spr.anim.stopWithStateAnims();
+					player.spr.anim.play("read");
 					pop("@Dear myself,");
 					afterPop = function() {
 						changeRoom("cell");
@@ -975,7 +1044,7 @@ class Game extends dn.Process {//}
 
 			if( !hasTrigger("phoneDropped") ) {
 				addSpot(18,25,7,6, "???");
-				setSprite( Assets.tiles.getSprite("phone") );
+				setSprite( Assets.tiles.h_get("phone") );
 				setAction(LOOK, "There is SOMETHING in the leaves.");
 				setAction(REMEMBER, "!I can't see what it is from here.");
 				if( !hasItem("broom") )
@@ -983,7 +1052,7 @@ class Game extends dn.Process {//}
 				else {
 					var f = function() {
 						setTrigger("phoneDropped");
-						SOUNDS.hit.play();
+						Assets.SOUNDS.hit(1);
 						pop("Using your BROOM, you reach the object and push it to the ground.");
 					}
 					setAction(USE, f);
@@ -992,7 +1061,7 @@ class Game extends dn.Process {//}
 			}
 			else {
 				addSpot(20,49,6,6, "Cellphone");
-				setSprite( Assets.tiles.getSprite("phone") );
+				setSprite( Assets.tiles.h_get("phone") );
 				setAction(LOOK, "It's a cellphone, a quite common model.");
 				setAction(REMEMBER, "It's mine.");
 				setAction(PICK, "!No.|For some reason... I don't want to keep it...");
@@ -1007,61 +1076,47 @@ class Game extends dn.Process {//}
 						pop("!I'm really sorry sir... but she...");
 						pop("The cellphone abruptly cease to function.");
 						setTrigger("phoneCalled");
-						afterPop = callback(changeRoom,"hell");
+						afterPop = changeRoom.bind("hell");
 					});
 				else
 					setAction(USE, "!It seems broken or something.");
 			}
 		}
-
-		if( room=="hell" ) {
-
-		}
-		*/
 	}
 
-	/*
+	function addSpot(x,y,w,h, name:String) : Hotspot {
+		var i = new h2d.Interactive(w,h);
+		wrapper.add(i, 99);
+		i.setPosition(x,y);
+		#if debug
+		i.backgroundColor = 0x66ff00ff;
+		#end
+		i.onClick = (_)->{
+			// runPending(hs); // TODO
+		}
+		i.onOver = (_)->{
+			i.alpha = 1;
+			showName(i, name);
+		}
+		i.onOut = (_)->{
+			i.alpha = 0.6;
+			hideName();
+		}
 
-	function addSpot(x,y,w,h, name:String) {
 		var hs : Hotspot = {
-			hit		: null,
-			spr		: null,
-			name	: name,
-			act		: new Map(),
+			i: i,
+			spr: null,
+			name: name,
+			act: new Map(),
 		}
 		hotSpots.push(hs);
-
-		var pt = buffer.localToGlobal(x,y);
-		var hit = new flash.display.Sprite();
-		dm.add(hit,1);
-		hit.x = pt.x;
-		hit.y = pt.y;
-		hs.hit = hit;
-		var g = hit.graphics;
-		g.beginFill(0x00ff00, 0.);
-		g.drawRect(0,0, w*UPSCALE, h*UPSCALE);
-		g.endFill();
-
-		hit.addEventListener(flash.events.MouseEvent.CLICK, function(e) {
-			runPending(hs);
-		});
-		hit.addEventListener(flash.events.MouseEvent.MOUSE_OVER, function(_) {
-			//hit.alpha = 0.1;
-			showName(name);
-
-		});
-		hit.addEventListener(flash.events.MouseEvent.MOUSE_OUT, function(_) {
-			//hit.alpha = 0;
-			hideName();
-		});
-
 		lastSpot = hs;
 		return hs;
 	}
 
+
 	function getTip() {
-		SOUNDS.help.play();
-		var tip =
+		Assets.SOUNDS.help(1);
 		if( !hasTriggerSet("usedTip") ) {
 			pop("You can use this option to get help if you are stuck in the game. But please, don't use too much!");
 			pop("!Each time you click on HELP, you will get the solution to current situation.");
@@ -1096,9 +1151,9 @@ class Game extends dn.Process {//}
 			pop("!I can't help you right now, sorry. It's up to you!");
 	}
 
-	/*
 
 	function changeRoom(k:String) {
+		/*
 		var from = room;
 		var d = #if debug 1000; #else 5000; #end
 		if( snapshot!=null ) {
@@ -1170,7 +1225,7 @@ class Game extends dn.Process {//}
 				player.moveTo(10,6);
 		}
 
-		SOUNDS.teleport.play();
+		SOUNDS.teleport(1);
 		initWorld();
 		player.world = world;
 		playerPath = new Array();
@@ -1189,8 +1244,10 @@ class Game extends dn.Process {//}
 					onTeleport();
 			}
 		}
+		*/
 	}
 
+	/*
 	function credits() {
 		invCont.visible = controlsCont.visible = false;
 		root.alpha = 1;
@@ -1219,19 +1276,21 @@ class Game extends dn.Process {//}
 			n++;
 		}
 	}
+	*/
 
-	function setSprite(s:DSprite) {
+	function setSprite(s:HSprite) {
 		lastSpot.spr = s;
-		buffer.dm.add(s,2);
-		var pt = buffer.globalToLocal(lastSpot.hit.x, lastSpot.hit.y);
-		s.x = pt.x;
-		s.y = pt.y;
+		wrapper.add(s,2);
+		s.setPos(lastSpot.i.x, lastSpot.i.y);
+		// var pt = buffer.globalToLocal(lastSpot.hit.x, lastSpot.hit.y);
+		// s.x = pt.x;
+		// s.y = pt.y;
 		return s;
 	}
+
 	function setAction(a:String, effect:Dynamic) {
 		lastSpot.act.set(a, effect);
 	}
-	*/
 
 	function initWorld() {
 		world = new World();
@@ -1352,6 +1411,7 @@ class Game extends dn.Process {//}
 		if( !world.collide(pt.x, pt.y) )
 			movePlayer(pt.x, pt.y);
 	}
+	*/
 
 	function hideName() {
 		if( curName!=null )
@@ -1359,24 +1419,21 @@ class Game extends dn.Process {//}
 		curName = null;
 	}
 
-	function showName(str:String) {
+	function showName(i:h2d.Interactive, str:String) {
 		hideName();
-		//if( pending!=null )
-			//str = pending.toUpperCase()+": "+str;
 		var tf = makeText(str);
-		tf.x = Std.int( 16*7 * UPSCALE*0.5 - tf.textWidth*tf.scaleX*0.5 );
+		wrapper.add(tf,1);
+		tf.x = Std.int( 16*7 - tf.textWidth*tf.scaleX*0.5 );
 		tf.textColor = 0xB8BAC9;
-		tf.x = root.mouseX+5;
-		tf.y = root.mouseY-16;
+		tf.x = Std.int( i.x + i.width + 8 );
+		tf.y = Std.int( i.y + i.height*0.5 );
 		tf.alpha = 0;
-		tw.create(tf, "alpha", 1, TEaseOut, 400);
-		//tf.y = 9 * UPSCALE;
-		dm.add(tf,1);
-		tf.mouseEnabled = false;
+		tw.createMs(tf.alpha, 1, TEaseOut, 400);
+
 		curName = tf;
 		curName.visible = !fl_pause && !fl_lockControls;
 	}
-
+	/*
 	//function closeActions() {
 		//if( menu!=null ) {
 			//menu.parent.removeChild(menu);
@@ -1581,9 +1638,9 @@ class Game extends dn.Process {//}
 				footstep--;
 				if( footstep<=0 ) {
 					if( Std.random(3)==0 )
-						SOUNDS.footstep1.play();
+						SOUNDS.footstep1(1);
 					else
-						SOUNDS.footstep2.play();
+						SOUNDS.footstep2(1);
 					footstep = 6;
 				}
 				if( !player.spr.isPlaying("read") )
