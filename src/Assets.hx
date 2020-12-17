@@ -40,15 +40,15 @@ class Assets {
 		tiles.sliceAnimGrid("standUp",0,1, 5,0);
 
 		tiles.sliceGrid("walkDown",0, 0,0, 5);
-		tiles.defineAnim("0,1,2,1,0, 3,4,3");
+		tiles.defineAnim("walkDown", "0,1,2,1,0, 3,4,3");
 
 		tiles.sliceGrid("walkUp",0, 5,0, 5);
-		tiles.defineAnim("0,1,2,1,0, 3,4,3");
+		tiles.defineAnim("walkUp", "0,1,2,1,0, 3,4,3");
 
 		tiles.sliceAnimGrid("read",0,25,  14,0, 2);
 
 		tiles.sliceGrid("cry",0,  0,1, 5);
-		tiles.defineAnim("0(20), 1(70), 2(10), 3(50), 4(100)");
+		tiles.defineAnim("cry", "0(20), 1(70), 2(10), 3(50), 4(100)");
 		tiles.sliceAnimGrid("afterCry",0,1,  4,1);
 
 		tiles.slice("heroFade",0,  0,16*25, 12*16, 9*16);
