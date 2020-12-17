@@ -13,6 +13,8 @@ class Entity {
 	public var dirY	: Int;
 	public var spr		: HSprite;
 
+	public var isMoving = false;
+
 	public function new(w, s) {
 		world = w;
 		spr = s;
@@ -36,7 +38,9 @@ class Entity {
 			dirY = -1;
 	}
 
-	public function update() {
+	public function update(tmod:Float) {
+		isMoving = dx!=0 || dy!=0;
+
 		// Y
 		if( yr+dy>1 && world.collide(cx,cy+1) ) {
 			yr = 1;
@@ -47,7 +51,7 @@ class Entity {
 			dy = 0;
 		}
 
-		yr+=dy;
+		yr+=dy*tmod;
 		while (yr<0) {
 			yr++;
 			cy--;
@@ -68,7 +72,7 @@ class Entity {
 			dx = 0;
 		}
 
-		xr+=dx;
+		xr+=dx*tmod;
 		while (xr<0) {
 			xr++;
 			cx--;
