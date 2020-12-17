@@ -736,7 +736,7 @@ class Game extends dn.Process {//}
 				setSprite(s);
 				s.x+=1;
 				s.y+=3;
-				s.anim.play("flow");
+				s.anim.playAndLoop("flow");
 			}
 			if( !hasTrigger("sinkClean") ) {
 				setAction(PICK, "I need a tool or something.");
