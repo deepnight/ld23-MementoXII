@@ -8,8 +8,6 @@ typedef Hotspot = {
 class Game extends dn.Process {//}
 	public static var ME : Game;
 
-	static var DEBUG_INTERACTIVES = false;
-
 	static var SHOW_COLLISIONS = false;
 	static var INAMES = new Map();
 	static var EXTENDED = true;
@@ -330,8 +328,6 @@ class Game extends dn.Process {//}
 		// Create interactive
 		var b = o.getBounds(wrapper);
 		var i = new h2d.Interactive(b.width,b.height,wrapper);
-		if( DEBUG_INTERACTIVES )
-			i.backgroundColor = 0x66ff00ff;
 		i.setPosition(b.x, b.y);
 		uiInteractives.push(i);
 
@@ -1127,8 +1123,6 @@ class Game extends dn.Process {//}
 		var i = new h2d.Interactive(w,h);
 		wrapper.add(i, 99);
 		i.setPosition(x,y);
-		if( DEBUG_INTERACTIVES )
-			i.backgroundColor = 0x66ff00ff;
 
 		// Register
 		var hs : Hotspot = {
@@ -1515,8 +1509,17 @@ class Game extends dn.Process {//}
 		skipClick = false;
 	}
 
+	var interactiveDebug = false;
 	override function update() {
 		super.update();
+
+		if( K.isPressed(K.D) && K.isDown(K.CTRL) && K.isDown(K.SHIFT) ) {
+			interactiveDebug = !interactiveDebug;
+			for(i in uiInteractives)
+				i.backgroundColor = interactiveDebug ? 0x66ff00ff : null;
+			for(h in hotSpots)
+				h.i.backgroundColor = interactiveDebug ? 0x66ff00ff : null;
+		}
 	}
 	/*
 	function main(_) {
