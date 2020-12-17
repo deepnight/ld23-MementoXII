@@ -6,7 +6,7 @@ class Assets {
 	public static function init() {
 		var t = hxd.Res.tiles.toTile();
 		tiles = new SpriteLib([t]);
-		font = hxd.Res.fonts.alterebroOutline.toFont();
+		font = hxd.Res.fonts._04b03.toFont();
 
 		tiles.setDefaultCenterRatio(0,0);
 
