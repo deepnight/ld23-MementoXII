@@ -8,7 +8,7 @@ typedef Hotspot = {
 class Game extends dn.Process {//}
 	public static var ME : Game;
 
-	static var DEBUG_INTERACTIVES = false;
+	static var DEBUG_INTERACTIVES = true;
 	static var SHOW_COLLISIONS = false;
 	static var INAMES = new Map();
 	static var EXTENDED = true;
@@ -350,7 +350,7 @@ class Game extends dn.Process {//}
 		var i = new h2d.Interactive(b.width,b.height,wrapper);
 		if( DEBUG_INTERACTIVES )
 			i.backgroundColor = 0x66ff00ff;
-		i.setPosition(o.x, o.y);
+		i.setPosition(b.x, b.y);
 		uiInteractives.push(i);
 
 		// Bind events
@@ -368,8 +368,7 @@ class Game extends dn.Process {//}
 				return;
 			}
 			o.getBounds(wrapper, b);
-			i.x = o.x;
-			i.y = o.y;
+			i.setPosition(b.x, b.y);
 			i.width = b.width;
 			i.height = b.height;
 		}
@@ -419,7 +418,7 @@ class Game extends dn.Process {//}
 		if( a==ABOUT ) {
 			Assets.SOUNDS.select(1);
 			pop("This game was completely developed by Sebastien \"deepnight\" Benard in 48h for the Ludum Dare competition (theme: \"Tiny World\").");
-			pop("@Visit BLOG.DEEPNIGHT.NET for more games :)");
+			pop("@Visit DEEPNIGHT.NET for more games :)");
 			return;
 		}
 		if( a!=pending )
@@ -1315,7 +1314,7 @@ class Game extends dn.Process {//}
 		buffer2.kill();
 		var list = [
 			"Thank you for playing!",
-			"Feel free to comment at BLOG.DEEPNIGHT.NET :)",
+			"Feel free to comment at DEEPNIGHT.NET :)",
 		];
 		if( EXTENDED )
 			list = list.concat([
