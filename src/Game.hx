@@ -100,21 +100,21 @@ class Game extends dn.Process {//}
 		INAMES.set("finalLetter", "A letter");
 
 		room = "cell";
-		#if debug
-		room = "park";
-		//inventory.add("picPart1");
-		triggers.set("phoneDropped",1);
-		triggers.set("letterPop",1);
-		//triggers.set("sinkClean",1);
-		//inventory.add("broom");
-		//inventory.add("knife");
-		inventory.add("ring");
-		inventory.add("chestKey");
-		triggers.set("framed",1);
-		triggers.set("foundChest",1);
-		//triggers.set("sinkClean",1);
-		//triggers.set("sinkOpen",1);
-		#end
+		// #if debug
+		// room = "park";
+		// //inventory.add("picPart1");
+		// triggers.set("phoneDropped",1);
+		// triggers.set("letterPop",1);
+		// //triggers.set("sinkClean",1);
+		// //inventory.add("broom");
+		// //inventory.add("knife");
+		// inventory.add("ring");
+		// inventory.add("chestKey");
+		// triggers.set("framed",1);
+		// triggers.set("foundChest",1);
+		// //triggers.set("sinkClean",1);
+		// //triggers.set("sinkOpen",1);
+		// #end
 
 		wrapper = new h2d.Layers(root);
 		wrapper.x = Std.int( Const.WID*0.5 - Const.GAMEZONE_WID*0.5 );
@@ -262,6 +262,7 @@ class Game extends dn.Process {//}
 
 	override function onResize() {
 		super.onResize();
+		root.x = Std.int( w()*0.5 - Const.WID*0.5*Const.SCALE );
 		root.setScale(Const.SCALE);
 		snapshotTex.resize(w(), h());
 	}
@@ -1251,17 +1252,18 @@ class Game extends dn.Process {//}
 		wrapper.removeChildren();
 		var list = [
 			"\"Memento XII\"",
-			"A 48h Ludum Dare game by Sebastien Benard",
+			"A 48h Ludum Dare game",
+			"by Sebastien Benard",
 			"",
 			"Thank you for playing!",
-			"Feel free to comment at DEEPNIGHT.NET :)",
+			"Please visit DEEPNIGHT.NET :)",
 		];
 		var n = 0;
 		for(t in list) {
 			var tf = makeText(t);
-			wrapper.addChild(tf);
+			root.addChild(tf);
 			tf.x = 20;
-			tf.y = 20 + 16*n;
+			tf.y = 20 + 11*n;
 			tf.alpha = 0;
 			tw.createMs(tf.alpha, n==0 ? 1 : 0.5, TEaseIn, 1000).delayMs(1500*n);
 			n++;
@@ -1372,9 +1374,9 @@ class Game extends dn.Process {//}
 		wrapper.add(tf,10);
 		tf.textColor = 0xB8BAC9;
 		if( i.x<=Const.GAMEZONE_WID*0.5 )
-			tf.x = Std.int( i.x + i.width + 8 );
+			tf.x = Std.int( i.x + i.width + 3 );
 		else
-			tf.x = Std.int( i.x - tf.textWidth - 4 );
+			tf.x = Std.int( i.x - tf.textWidth - 3 );
 		tf.y = Std.int( i.y + i.height*0.5 );
 		tf.alpha = 0;
 		tw.createMs(tf.alpha, 1, TEaseOut, 400);
@@ -1434,6 +1436,7 @@ class Game extends dn.Process {//}
 		wrapper.add(f,10);
 
 		var tf = makeText(str, true);
+		tf.filter = new h2d.filter.DropShadow(1, M.PIHALF, 0x0, 0.4, true);
 		tf.textColor = tcol;
 		tf.x+= 10;
 		tf.y+= 10;
@@ -1451,8 +1454,7 @@ class Game extends dn.Process {//}
 		]);
 
 		f.x = -50 + Std.random(100) + 16*2;
-		if( f.x<5 ) f.x = 5;
-		if( f.x+f.outerWidth+5>=w() ) f.x = w()-f.outerWidth-5;
+		f.x = M.fclamp( f.x, 5, Const.WID-wrapper.x-f.outerWidth-5 );
 
 		f.y = if( player.cy>=6 ) Std.random(30)+20 else Std.random(30) + Const.GRID*6;
 		if( f.y<5 ) f.y = 5;
