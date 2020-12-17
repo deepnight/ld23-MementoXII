@@ -1344,10 +1344,9 @@ var Game = function() {
 		return { cx : x, cy : y};
 	});
 	Game.INAMES.h["picture"] = "Old photograph";
-	Game.INAMES.h["picPart1"] = "photograph fragment (1)";
-	Game.INAMES.h["picPart2"] = "photograph fragment (2)";
-	Game.INAMES.h["picPart3"] = "photograph fragment (3)";
-	Game.INAMES.h["picPart3"] = "photograph fragment (3)";
+	Game.INAMES.h["picPart1"] = "Ripped photo (1/3)";
+	Game.INAMES.h["picPart2"] = "Ripped photo (2/3)";
+	Game.INAMES.h["picPart3"] = "Ripped photo (3/3)";
 	Game.INAMES.h["chestKey"] = "Small copper key";
 	Game.INAMES.h["knife"] = "Blunt knife";
 	Game.INAMES.h["ring"] = "Wedding ring";
@@ -1875,7 +1874,7 @@ Game.prototype = $extend(dn_Process.prototype,{
 		tf.set_text(str);
 		tf.set_filter(new dn_heaps_filter_PixelOutline());
 		if(multiline) {
-			tf.set_maxWidth(128);
+			tf.set_maxWidth(Const.GAMEZONE_WID - 15);
 		}
 		return tf;
 	}
@@ -2027,13 +2026,14 @@ Game.prototype = $extend(dn_Process.prototype,{
 		this.invCont.set_layout(h2d_FlowLayout.Vertical);
 		var _this = this.invCont;
 		_this.posChanged = true;
-		_this.x = 0;
+		_this.x = 2;
 		var _this = this.invCont;
 		_this.posChanged = true;
 		_this.y = 132;
 		this.invCont.set_minWidth(Const.GAMEZONE_WID);
 		this.invCont.set_minHeight(12);
 		this.invCont.set_horizontalAlign(h2d_FlowAlign.Middle);
+		this.invCont.set_verticalSpacing(1);
 		this.invCont.alpha = old;
 		this.wrapper.addChildAt(this.invCont,1);
 		var a = this.inventory.length == 0 ? 0.3 : 1;
@@ -2079,7 +2079,7 @@ Game.prototype = $extend(dn_Process.prototype,{
 		_this.y = v;
 	}
 	,getMouse: function() {
-		var x = Boot.ME.s2d.get_mouseX() / Const.SCALE - this.wrapper.x | 0;
+		var x = (Boot.ME.s2d.get_mouseX() - this.root.x) / Const.SCALE - this.wrapper.x | 0;
 		var y = Boot.ME.s2d.get_mouseY() / Const.SCALE - this.wrapper.y | 0;
 		var cx = x / Const.GRID | 0;
 		var cy = y / Const.GRID | 0;
@@ -3194,6 +3194,8 @@ Game.prototype = $extend(dn_Process.prototype,{
 		this.root.drawTo(this.snapshotTex);
 		var snapshot = new h2d_Bitmap();
 		this.root.addChildAt(snapshot,99);
+		snapshot.posChanged = true;
+		snapshot.x = -this.root.x / Const.SCALE;
 		snapshot.set_tile(h2d_Tile.fromTexture(this.snapshotTex));
 		var v = 1 / Const.SCALE;
 		snapshot.posChanged = true;
@@ -3340,7 +3342,7 @@ Game.prototype = $extend(dn_Process.prototype,{
 		this.root.alpha = 1;
 		this.uiInteractives = [];
 		this.wrapper.removeChildren();
-		var list = ["\"Memento XII\"","A 48h Ludum Dare game","by Sebastien Benard","","Thank you for playing!","Please visit DEEPNIGHT.NET :)"];
+		var list = ["\"Memento XII\"","A 48h Ludum Dare game","by Sebastien Benard","","Thank you for playing!","Please visit DEEPNIGHT.NET","",":)"];
 		var n = 0;
 		var _g = 0;
 		while(_g < list.length) {
@@ -3826,16 +3828,12 @@ Game.prototype = $extend(dn_Process.prototype,{
 		var tf = this.makeText(str);
 		this.wrapper.addChildAt(tf,10);
 		tf.set_textColor(12106441);
-		if(i.x <= Const.GAMEZONE_WID * 0.5) {
-			tf.posChanged = true;
-			tf.x = i.x + i.width + 3 | 0;
-		} else {
-			var v = i.x - tf.get_textWidth() - 3 | 0;
-			tf.posChanged = true;
-			tf.x = v;
-		}
+		var v = i.x + i.width * 0.5 - tf.get_textWidth() * 0.5 | 0;
 		tf.posChanged = true;
-		tf.y = i.y + i.height * 0.5 | 0;
+		tf.x = v;
+		var v = i.y - tf.get_textHeight();
+		tf.posChanged = true;
+		tf.y = v;
 		tf.alpha = 0;
 		var _tween = this.tw.create_(function() {
 			return tf.alpha;
@@ -11574,6 +11572,13 @@ h2d_Flow.prototype = $extend(h2d_Object.prototype,{
 		}
 		this.set_needReflow(true);
 		return this.horizontalSpacing = s;
+	}
+	,set_verticalSpacing: function(s) {
+		if(this.verticalSpacing == s) {
+			return s;
+		}
+		this.set_needReflow(true);
+		return this.verticalSpacing = s;
 	}
 	,set_enableInteractive: function(b) {
 		if(this.enableInteractive == b) {
@@ -49480,7 +49485,7 @@ Assets.SOUNDS = (function($this) {
 }(this));
 Const.GRID = 8;
 Const.GAMEZONE_WID = 118;
-Const.WID = 130;
+Const.WID = 140;
 Const.HEI = 180;
 Const.SCALE = 1;
 h3d_shader_ScreenShader.SRC = "HXSLF2gzZC5zaGFkZXIuU2NyZWVuU2hhZGVyBwEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACghfX2luaXRfXw4GAAALBnZlcnRleA4GAAACAgoAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAALAAAFAQYEAgYFDAkDKg4ECgICBQoAAAMGAQoCAgUKBAADAgQDAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMAA";
