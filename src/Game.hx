@@ -8,19 +8,20 @@ typedef Hotspot = {
 class Game extends dn.Process {//}
 	public static var ME : Game;
 
+	static var DEBUG_INTERACTIVES = false;
 	static var SHOW_COLLISIONS = false;
 	static var INAMES = new Map();
 	static var EXTENDED = true;
 
-	static var LOOK = "Look at";
-	static var PICK = "Pick up";
-	static var USE = "Use";
-	static var ITEM = "Inventory";
-	static var OPEN = "Open";
-	static var CLOSE = "Close";
-	static var REMEMBER = "Remember";
-	static var HELP = "Help me";
-	static var ABOUT = "About";
+	static final LOOK = "Look";
+	static final PICK = "Take";
+	static final USE = "Use";
+	static final ITEM = "Inventory";
+	static final OPEN = "Open";
+	static final CLOSE = "Close";
+	static final REMEMBER = "Remember";
+	static final HELP = "Help me";
+	static final ABOUT = "About";
 
 	public var wrapper : h2d.Layers;
 	var world		: World;
@@ -30,7 +31,6 @@ class Game extends dn.Process {//}
 
 	var onArrive	: Null<Void->Void>;
 	var afterPop	: Null<Void->Void>;
-	var lastSpot	: Null<Hotspot>;
 	var inventory	: List<String>;
 	var triggers	: Map<String,Int>;
 	var actions		: List<h2d.Text>;
@@ -48,11 +48,15 @@ class Game extends dn.Process {//}
 	var invCont		: h2d.Object;
 	var invSep		: HSprite;
 	var invSep2		: HSprite;
-	var controlsCont: h2d.Object;
+	var actionsWrapper : h2d.Object;
+	var miscWrapper : h2d.Flow;
 	var heroFade	: HSprite;
 
 	var popQueue	: List<String>;
 	var hotSpots	: Array<Hotspot>;
+	var lastSpot	: Null<Hotspot>;
+
+	var uiInteractives : Array<h2d.Interactive> = [];
 
 	var playerPath	: Array<{x:Int, y:Int}>;
 	var playerTarget: Null<{x:Int, y:Int}>;
@@ -147,18 +151,36 @@ class Game extends dn.Process {//}
 		heroFade.visible = false;
 		wrapper.add(heroFade, 5);
 
+		// Attach actions
 		var x = 0;
 		var y = 0;
-		controlsCont = new h2d.Object();
-		wrapper.add(controlsCont, 1);
-		var alist = [LOOK, USE, OPEN, REMEMBER, PICK, CLOSE, HELP];
+		actionsWrapper = new h2d.Object();
+		wrapper.add(actionsWrapper, 1);
+		miscWrapper = new h2d.Flow();
+		wrapper.add(miscWrapper, 1);
+		miscWrapper.minWidth = Const.WID;
+		miscWrapper.horizontalAlign = Middle;
+		miscWrapper.horizontalSpacing = 8;
+		miscWrapper.y = 112;
+
+		var alist = [LOOK, REMEMBER, USE, PICK, OPEN, CLOSE, HELP];
 		if( EXTENDED )
 			alist.push(ABOUT);
 		for(a in alist) {
 			var tf = makeText(a);
-			controlsCont.addChild(tf);
-			tf.x = 11 + x*46;
-			tf.y = 16*5 + y*17;
+			switch a {
+				case ABOUT:
+					miscWrapper.addChild(tf);
+
+				case HELP:
+					miscWrapper.addChild(tf);
+
+				case _:
+					var w = 40;
+					tf.x = Std.int( 3 + x*w + w*0.5-tf.textWidth*0.5 );
+					tf.y = 16*5 + y*17;
+					actionsWrapper.addChild(tf);
+			}
 			if( a==ABOUT ) {
 				tf.y+= 17;
 				tf.x+=45;
@@ -210,7 +232,7 @@ class Game extends dn.Process {//}
 
 		setPending();
 
-		addHotSpots();
+		initHotSpots();
 		// updateInventory(); // TODO
 
 		Assets.SOUNDS.ambiant().play(true);
@@ -282,8 +304,25 @@ class Game extends dn.Process {//}
 	}
 
 	function onMouseDown(ev:hxd.Event) {
-		if( fl_pause )
+		trace("raw down");
+		if( skipClick || fl_ending )
 			return;
+
+		trace("down");
+
+		if( fl_pause ) {
+			resumeGame();
+			closePop();
+			return;
+		}
+
+		if( fl_lockControls )
+			return;
+
+		onArrive = null;
+		var m = getMouse();
+		// if( !world.collide(m.cx, m.cy) )
+			// movePlayer(m.cx,m.cy); // TODO
 
 		// #if debug
 		// var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
@@ -309,8 +348,10 @@ class Game extends dn.Process {//}
 		// Create interactive
 		var b = o.getBounds(wrapper);
 		var i = new h2d.Interactive(b.width,b.height,wrapper);
-		// i.backgroundColor = 0x66ff00ff;
+		if( DEBUG_INTERACTIVES )
+			i.backgroundColor = 0x66ff00ff;
 		i.setPosition(o.x, o.y);
+		uiInteractives.push(i);
 
 		// Bind events
 		if( events.click!=null ) i.onClick = (_)->events.click();
@@ -323,6 +364,7 @@ class Game extends dn.Process {//}
 			if( o.parent==null ) {
 				p.destroy();
 				i.remove();
+				uiInteractives.remove(i);
 				return;
 			}
 			o.getBounds(wrapper, b);
@@ -345,14 +387,21 @@ class Game extends dn.Process {//}
 	function resumeGame() {
 		fl_pause = false;
 		lockControls(false);
-		// if( curName!=null ) // TODO
-		// 	curName.visible = true;
+		if( curName!=null )
+			curName.visible = true;
 	}
 
 	function lockControls(l) {
 		fl_lockControls = l;
-		controlsCont.alpha = l ? 0.3 : 1;
-		// updateInventory(); // TODO
+		actionsWrapper.alpha = l ? 0.3 : 1;
+
+		for(hs in hotSpots)
+			hs.i.visible = !l;
+
+		for(i in uiInteractives)
+			i.visible = !l;
+
+		updateInventory();
 	}
 
 
@@ -481,13 +530,22 @@ class Game extends dn.Process {//}
 		}
 	}
 
-	/*
+	function getMouse() {
+		var x = Std.int( Boot.ME.s2d.mouseX / Const.SCALE );
+		var y = Std.int( Boot.ME.s2d.mouseY / Const.SCALE );
+		var cx = Std.int( x/Const.GRID );
+		var cy = Std.int( y/Const.GRID );
+
+		return {
+			x: x,
+			y: y,
+			cx: cx,
+			cy: cy,
+		}
+	}
+
 	function runPending(hs:Hotspot) {
-		if( fl_pause )
-			return;
-		if( fl_lockControls )
-			return;
-		if( pending==null )
+		if( fl_pause || fl_lockControls || pending==null )
 			return;
 
 		var a = pending;
@@ -498,36 +556,34 @@ class Game extends dn.Process {//}
 		if( hs.act.exists(a) ) {
 			var resolve = function() {
 				var r = hs.act.get(a);
-				if( Type.typeof(r)==ValueType.TFunction ) {
-					//closeActions();
-					r();
+				switch Type.typeof(r) {
+					case TFunction: r();
+					case TClass(String): pop(r);
+					case _: throw "Unknown action type: "+Type.typeof(r);
 				}
-				else
-					pop(r);
 			}
 
 			skipClick = true;
-			var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
-			pt.x = Std.int(pt.x/CWID);
-			pt.y = Std.int(pt.y/CHEI);
-			if( movePlayer(pt.x, pt.y) )
-				onArrive = resolve;
-			else
+			var m = getMouse();
+			// if( movePlayer(m.cx, m.cy) ) // TODO
+			// 	onArrive = resolve;
+			// else
 				resolve();
 		}
 		else {
 			switch(pending) {
-				case LOOK	: pop("Not much to say.");
-				case PICK	: pop("I don't need that.");
-				case OPEN	: pop("I can't open that.");
-				case CLOSE	: pop("What?");
-				case USE	: pop("I have no use for that.");
-				case REMEMBER: pop("This doesn't ring a bell...");
+				case LOOK : pop("Not much to say.");
+				case PICK : pop("I don't think I need that.");
+				case OPEN : pop("This can't be opened.");
+				case CLOSE : pop("What?");
+				case USE : pop("I have no use for that.");
+				case REMEMBER : pop("I... I don't remember anything about that...");
 
 			}
 		}
 	}
 
+/*
 
 	function getClosest(cx,cy) {
 		//if( !world.collide(cx,cy) )
@@ -591,7 +647,7 @@ class Game extends dn.Process {//}
 	}
 	*/
 
-	function addHotSpots() {
+	function initHotSpots() {
 		// Cleanup
 		for(hs in hotSpots) {
 			hs.i.remove();
@@ -745,7 +801,7 @@ class Game extends dn.Process {//}
 			if( !hasTrigger("sinkClean") ) {
 				setAction(PICK, "I need a tool or something.");
 				setAction(LOOK, "A basic sink with an old faucet.|!Something is blocking the sink hole.");
-				setAction(REMEMBER, "I remember that something felt in the hole.|...But what was it?");
+				setAction(REMEMBER, "!I remember that SOMETHING felt in the hole.|...But what was it?");
 				setAction(OPEN, "!No, something is blocking the hole.");
 			}
 			else {
@@ -790,7 +846,7 @@ class Game extends dn.Process {//}
 				setAction(REMEMBER, changeRoom.bind("park"));
 			}
 			else
-				setAction(REMEMBER, "I'm pretty sure it was not normally empty.|But where is its content?");
+				setAction(REMEMBER, "I'm pretty sure it was not normally empty.|!But where is its content?");
 			if( !hasTrigger("ringBack") )
 				setAction(LOOK, "It looks like some kind of jewel case. It is empty.");
 			else
@@ -1085,14 +1141,26 @@ class Game extends dn.Process {//}
 	}
 
 	function addSpot(x,y,w,h, name:String) : Hotspot {
+		// Create interactive
 		var i = new h2d.Interactive(w,h);
 		wrapper.add(i, 99);
 		i.setPosition(x,y);
-		#if debug
-		i.backgroundColor = 0x66ff00ff;
-		#end
+		if( DEBUG_INTERACTIVES )
+			i.backgroundColor = 0x66ff00ff;
+
+		// Register
+		var hs : Hotspot = {
+			i: i,
+			spr: null,
+			name: name,
+			act: new Map(),
+		}
+		hotSpots.push(hs);
+		lastSpot = hs;
+
+		// Events
 		i.onClick = (_)->{
-			// runPending(hs); // TODO
+			runPending(hs);
 		}
 		i.onOver = (_)->{
 			i.alpha = 1;
@@ -1102,15 +1170,7 @@ class Game extends dn.Process {//}
 			i.alpha = 0.6;
 			hideName();
 		}
-
-		var hs : Hotspot = {
-			i: i,
-			spr: null,
-			name: name,
-			act: new Map(),
-		}
-		hotSpots.push(hs);
-		lastSpot = hs;
+		i.alpha = 0.6;
 		return hs;
 	}
 
@@ -1192,7 +1252,7 @@ class Game extends dn.Process {//}
 							lockControls(true);
 							fl_pause = true;
 							fl_ending = true;
-							controlsCont.visible = false;
+							actionsWrapper.visible = false;
 							invCont.visible = false;
 							tw.create(heroFade, "alpha", 1, TEase, 5000);
 							player.spr.playAnim("cry",1);
@@ -1249,7 +1309,7 @@ class Game extends dn.Process {//}
 
 	/*
 	function credits() {
-		invCont.visible = controlsCont.visible = false;
+		invCont.visible = actionsWrapper.visible = false;
 		root.alpha = 1;
 		buffer.kill();
 		buffer2.kill();
@@ -1364,7 +1424,7 @@ class Game extends dn.Process {//}
 	}
 
 	inline function refreshWorld() {
-		addHotSpots();
+		initHotSpots();
 	}
 
 
@@ -1392,25 +1452,6 @@ class Game extends dn.Process {//}
 		#end
 	}
 
-	function onClick(e) {
-		if( skipClick || fl_ending )
-			return;
-		if( fl_pause ) {
-			unpause();
-			closePop();
-			return;
-		}
-
-		if( fl_lockControls )
-			return;
-
-		onArrive = null;
-		var pt = buffer.globalToLocal(root.mouseX, root.mouseY);
-		pt.x = Std.int(pt.x/CWID);
-		pt.y = Std.int(pt.y/CHEI);
-		if( !world.collide(pt.x, pt.y) )
-			movePlayer(pt.x, pt.y);
-	}
 	*/
 
 	function hideName() {
@@ -1546,9 +1587,16 @@ class Game extends dn.Process {//}
 		tf.y+= 10;
 		f.addChild(tf);
 
-		f.backgroundTile = h2d.Tile.fromColor(col);
 		f.padding = 4;
-		f.paddingTop = 0;
+		f.paddingTop--;
+
+		var bg = new h2d.Bitmap( h2d.Tile.fromColor(col, f.outerWidth, f.outerHeight) );
+		f.addChildAt(bg,0);
+		f.getProperties(bg).isAbsolute = true;
+		bg.filter = new h2d.filter.Group([
+			new dn.heaps.filter.PixelOutline(0xffffff),
+			new dn.heaps.filter.PixelOutline(0x0),
+		]);
 
 		f.x = Std.random(100) + 16*2;
 		if( f.x<5 ) f.x = 5;
@@ -1562,12 +1610,16 @@ class Game extends dn.Process {//}
 		popUp = f;
 	}
 
+	override function preUpdate() {
+		super.preUpdate();
+		skipClick = false;
+	}
 
+	override function update() {
+		super.update();
+	}
 	/*
 	function main(_) {
-		skipClick = false;
-		tw.update();
-
 		if( dispScale==0 )
 			buffer.postFilters = [];
 		else {

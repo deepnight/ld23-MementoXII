@@ -62,7 +62,7 @@ class Main extends dn.Process {
 
 	override function onResize() {
 		super.onResize();
-		Const.SCALE = Std.int( dn.heaps.Scaler.bestFit(118,180, true) );
+		Const.SCALE = Std.int( dn.heaps.Scaler.bestFit(Const.WID, Const.HEI, true) );
 		overlay.bevelSize = Const.SCALE;
 	}
 
