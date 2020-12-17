@@ -19,7 +19,7 @@ class Game extends dn.Process {//}
 	static final OPEN = "Open";
 	static final CLOSE = "Close";
 	static final REMEMBER = "Remember";
-	static final HELP = "Help me";
+	static final HELP = "I'm stuck";
 	static final ABOUT = "About";
 
 	public var wrapper : h2d.Layers;
@@ -39,7 +39,6 @@ class Game extends dn.Process {//}
 	var popUp		: Null<h2d.Flow>;
 	var curName		: Null<h2d.Text>;
 	var roomBg		: HSprite;
-	// var snapshot	: flash.display.Bitmap;
 	var invCont		: h2d.Object;
 	var invSep		: HSprite;
 	var invSep2		: HSprite;
@@ -71,6 +70,7 @@ class Game extends dn.Process {//}
 
 		createRoot(Main.ME.root);
 		ME = this;
+		new h2d.Bitmap( h2d.Tile.fromColor(0x0, Const.WID, Const.HEI), root );
 
 		actions = new List();
 		fl_pause = false;
@@ -115,12 +115,11 @@ class Game extends dn.Process {//}
 		#end
 
 		wrapper = new h2d.Layers(root);
-		wrapper.setScale(Const.SCALE);
-		var bg = new h2d.Bitmap( h2d.Tile.fromColor(0xff00ff, Const.WID, Const.HEI), wrapper );
+		wrapper.x = Std.int( Const.WID*0.5 - Const.GAMEZONE_WID*0.5 );
 
 		distort = new DistortFilter(2,32,4);
 		distort.intensity = 0;
-		wrapper.filter = distort;
+		root.filter = distort;
 
 		initWorld();
 
@@ -159,7 +158,7 @@ class Game extends dn.Process {//}
 		miscWrapper.minWidth = Const.GAMEZONE_WID;
 		miscWrapper.horizontalAlign = Middle;
 		miscWrapper.horizontalSpacing = 8;
-		miscWrapper.y = 112;
+		miscWrapper.y = 108;
 
 		var alist = [LOOK, REMEMBER, USE, PICK, OPEN, CLOSE, HELP];
 		if( EXTENDED )
@@ -175,8 +174,8 @@ class Game extends dn.Process {//}
 
 				case _:
 					var w = 40;
-					tf.x = Std.int( 3 + x*w + w*0.5-tf.textWidth*0.5 );
-					tf.y = 16*5 + y*17;
+					tf.x = Std.int( -1 + x*w + w*0.5-tf.textWidth*0.5 );
+					tf.y = 85 + y*10;
 					actionsWrapper.addChild(tf);
 			}
 			if( a==ABOUT ) {
@@ -252,12 +251,14 @@ class Game extends dn.Process {//}
 			}
 		}
 		#end
+
+		dn.Process.resizeAll();
 	}
 
 
 	override function onResize() {
 		super.onResize();
-		wrapper.setScale(Const.SCALE);
+		root.setScale(Const.SCALE);
 	}
 
 	override function onDispose() {
@@ -367,13 +368,18 @@ class Game extends dn.Process {//}
 		fl_lockControls = l;
 		actionsWrapper.alpha = l ? 0.3 : 1;
 
+		applyInteractiveVisibility();
+		hideName();
+		updateInventory();
+	}
+
+	function applyInteractiveVisibility() {
 		for(hs in hotSpots)
-			hs.i.visible = !l;
+			hs.i.visible = !fl_lockControls;
 
 		for(i in uiInteractives)
-			i.visible = !l;
+			i.visible = !fl_lockControls;
 
-		updateInventory();
 	}
 
 
@@ -1179,18 +1185,24 @@ class Game extends dn.Process {//}
 
 	function changeRoom(k:String) {
 		var from = room;
-		var d = #if debug 1000; #else 5000; #end
+		var d = #if debug 1000; #else 3000; #end
+		d = 3000; // HACK
 
-		// TODO distorsion
-		// if( snapshot!=null ) {
-		// 	snapshot.bitmapData.dispose();
-		// 	snapshot.parent.removeChild(snapshot);
-		// }
-		// snapshot = new flash.display.Bitmap( buffer.clone() );
-		// buffer.dm.add(snapshot, 99);
-		// tw.create(snapshot, "alpha", 0, TEaseIn, d*0.8).onEnd = function() {
-		// 	snapshot.bitmapData.dispose();
-		// }
+		hideName();
+
+		// Draw current view to snapshot
+		var tex = new h3d.mat.Texture(w(),h(), [Target]);
+		root.drawTo(tex);
+
+		// Display old view in front of current & fade it away
+		var snapshot = new h2d.Bitmap();
+		root.add(snapshot, 99);
+		snapshot.tile = h2d.Tile.fromTexture( tex );
+		snapshot.setScale(1/Const.SCALE);
+		tw.createMs(snapshot.alpha, 0, TEaseIn, d*0.8).onEnd = function() {
+			snapshot.tile.dispose();
+			snapshot.remove();
+		}
 
 		var onTeleport = null;
 		room = k;
@@ -1378,8 +1390,9 @@ class Game extends dn.Process {//}
 		refreshWorld();
 	}
 
-	inline function refreshWorld() {
+	function refreshWorld() {
 		initHotSpots();
+		applyInteractiveVisibility();
 	}
 
 
@@ -1471,7 +1484,7 @@ class Game extends dn.Process {//}
 			new dn.heaps.filter.PixelOutline(0x0),
 		]);
 
-		f.x = Std.random(100) + 16*2;
+		f.x = -50 + Std.random(100) + 16*2;
 		if( f.x<5 ) f.x = 5;
 		if( f.x+f.outerWidth+5>=w() ) f.x = w()-f.outerWidth-5;
 
