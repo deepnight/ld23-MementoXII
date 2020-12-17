@@ -54,8 +54,8 @@ class Game extends dn.Process {//}
 
 	var uiInteractives : Array<h2d.Interactive> = [];
 
-	var playerPath	: Array<{x:Int, y:Int}>;
-	var playerTarget: Null<{x:Int, y:Int}>;
+	var playerPath	: Array<{cx:Int, cy:Int}>;
+	var playerTarget: Null<{cx:Int, cy:Int}>;
 
 	var fl_pause	: Bool;
 	var fl_lockControls	: Bool;
@@ -63,6 +63,8 @@ class Game extends dn.Process {//}
 	var skipClick	: Bool;
 
 	var room		: String;
+
+	var pathFinder : dn.pathfinder.AStar<{cx:Int, cy:Int}>;
 
 	public function new() {
 		super(Main.ME);
@@ -83,6 +85,8 @@ class Game extends dn.Process {//}
 		dispScale = 0;
 		footstep = 0;
 
+		pathFinder = new dn.pathfinder.AStar( (x,y)->{ cx:x, cy:y } );
+
 		var bg = new h2d.Graphics(root);
 		bg.beginFill(#if debug 0x0 #else 0x0 #end,1);
 		bg.drawRect(0,0,w(),h());
@@ -101,21 +105,21 @@ class Game extends dn.Process {//}
 		INAMES.set("finalLetter", "A letter");
 
 		room = "cell";
-		// #if debug
-		// room = "park";
-		// //inventory.add("picPart1");
-		// triggers.set("phoneDropped",1);
-		// triggers.set("letterPop",1);
-		// //triggers.set("sinkClean",1);
-		// //inventory.add("broom");
-		// //inventory.add("knife");
-		// inventory.add("ring");
-		// inventory.add("chestKey");
-		// triggers.set("framed",1);
-		// triggers.set("foundChest",1);
-		// //triggers.set("sinkClean",1);
-		// //triggers.set("sinkOpen",1);
-		// #end
+		#if debug
+		room = "park";
+		//inventory.add("picPart1");
+		triggers.set("phoneDropped",1);
+		triggers.set("letterPop",1);
+		//triggers.set("sinkClean",1);
+		//inventory.add("broom");
+		//inventory.add("knife");
+		inventory.add("ring");
+		inventory.add("chestKey");
+		triggers.set("framed",1);
+		triggers.set("foundChest",1);
+		//triggers.set("sinkClean",1);
+		//triggers.set("sinkOpen",1);
+		#end
 
 		wrapper = new h2d.Layers(root);
 		wrapper.setScale(Const.SCALE);
@@ -203,19 +207,6 @@ class Game extends dn.Process {//}
 						setPending(a);
 				},
 			});
-			// TODO
-			// tf.addEventListener(flash.events.MouseEvent.MOUSE_OVER, function(_) {
-			// 	if( !fl_lockControls )
-			// 		tf.alpha = 1;
-			// });
-			// tf.addEventListener(flash.events.MouseEvent.MOUSE_OUT, function(_) {
-			// 	if( tf.text!=pending )
-			// 		tf.alpha = 0.6;
-			// });
-			// tf.addEventListener(flash.events.MouseEvent.CLICK, function(_) {
-			// 	if( !fl_lockControls )
-			// 		setPending(a);
-			// });
 			x++;
 			if( x>=3 ) {
 				x = 0;
@@ -227,7 +218,7 @@ class Game extends dn.Process {//}
 		setPending();
 
 		initHotSpots();
-		// updateInventory(); // TODO
+		updateInventory();
 
 		Assets.SOUNDS.ambiant().play(true);
 
@@ -315,8 +306,8 @@ class Game extends dn.Process {//}
 
 		onArrive = null;
 		var m = getMouse();
-		// if( !world.collide(m.cx, m.cy) )
-			// movePlayer(m.cx,m.cy); // TODO
+		if( !world.collide(m.cx, m.cy) )
+			movePlayer(m.cx,m.cy);
 	}
 
 	function onMouseUp(ev:hxd.Event) {
@@ -414,18 +405,15 @@ class Game extends dn.Process {//}
 			}
 	}
 
-	/*
-
 	function movePlayer(cx,cy) {
 		var pt = getClosest(cx,cy);
 		if( pt==null || pt.x==player.cx && pt.y==player.cy )
 			return false;
+
 		playerPath = getPath(player.cx, player.cy, pt.x, pt.y);
-		playerTarget = {x:cx,y:cy}
+		playerTarget = {cx:cx, cy:cy}
 		return playerPath.length>0;
 	}
-
-	*/
 
 	function setTrigger(k, ?n=1) {
 		triggers.set(k,n);
@@ -543,9 +531,9 @@ class Game extends dn.Process {//}
 
 			skipClick = true;
 			var m = getMouse();
-			// if( movePlayer(m.cx, m.cy) ) // TODO
-			// 	onArrive = resolve;
-			// else
+			if( movePlayer(m.cx, m.cy) )
+				onArrive = resolve;
+			else
 				resolve();
 		}
 		else {
@@ -561,12 +549,7 @@ class Game extends dn.Process {//}
 		}
 	}
 
-/*
-
 	function getClosest(cx,cy) {
-		//if( !world.collide(cx,cy) )
-			//return {x:cx, y:cy}
-
 		for( dist in 1...4)
 			for( d in [{x:0,y:dist}, {x:-dist,y:0}, {x:dist,y:0}, {x:0,y:-dist} ] )
 				if( !world.collide(cx+d.x, cy+d.y) )
@@ -584,9 +567,11 @@ class Game extends dn.Process {//}
 		if ( world.collide(x,y) || world.collide(tx,ty) )
 			return [];
 		else
-			return astar(x,y, tx,ty);
+			return pathFinder.getPath(x,y, tx,ty);
+			// return astar(x,y, tx,ty);
 	}
 
+	/*
 	function astar(x,y, tx,ty, ?branch:Array<{x:Int,y:Int}>, ?tags:Array<Bool>, ?best:Array<{x:Int,y:Int}>, ?tries=0) : Array<{x:Int,y:Int}> {
 		if ( branch==null )
 			branch = new Array();
@@ -624,6 +609,7 @@ class Game extends dn.Process {//}
 		return y*world.wid + x;
 	}
 	*/
+
 
 	function initHotSpots() {
 		// Cleanup
@@ -1331,6 +1317,7 @@ class Game extends dn.Process {//}
 	function initWorld() {
 		world = new World();
 		world.removeRectangle(2,4, 10,6);
+		pathFinder.init(world.wid, world.hei, world.collide);
 		var frame = 0;
 		switch(room) {
 			case "cell" :
@@ -1513,6 +1500,21 @@ class Game extends dn.Process {//}
 	override function update() {
 		super.update();
 
+		// Distorsion effect
+		// if( dispScale==0 )
+		// 	buffer.postFilters = [];
+		// else {
+		// 	var spd = 0.1; // * (1-dispScale);
+		// 	displace.perlinNoise(50,30, 3, 0, true, false, 7, true, [new flash.geom.Point(-spd*UNIQ++,-spd*UNIQ), new flash.geom.Point(-spd*UNIQ++,-2*spd*UNIQ), new flash.geom.Point(0.5*spd*UNIQ++,1.5*spd*UNIQ)]);
+		// 	buffer.postFilters = [
+		// 		new flash.filters.DisplacementMapFilter(displace, new flash.geom.Point(0,0), 1, 1, dispScale*13,dispScale*15, flash.filters.DisplacementMapFilterMode.WRAP, 0, 1)
+		// 	];
+		// 	var recal = dispScale<0.2 ? 0. : (dispScale-0.2)/0.8;
+		// 	buffer.render.x = -13*recal;
+		// 	buffer.render.y = -15*recal;
+		// }
+
+
 		if( K.isPressed(K.D) && K.isDown(K.CTRL) && K.isDown(K.SHIFT) ) {
 			interactiveDebug = !interactiveDebug;
 			for(i in uiInteractives)
@@ -1520,45 +1522,34 @@ class Game extends dn.Process {//}
 			for(h in hotSpots)
 				h.i.backgroundColor = interactiveDebug ? 0x66ff00ff : null;
 		}
-	}
-	/*
-	function main(_) {
-		if( dispScale==0 )
-			buffer.postFilters = [];
-		else {
-			var spd = 0.1; // * (1-dispScale);
-			displace.perlinNoise(50,30, 3, 0, true, false, 7, true, [new flash.geom.Point(-spd*UNIQ++,-spd*UNIQ), new flash.geom.Point(-spd*UNIQ++,-2*spd*UNIQ), new flash.geom.Point(0.5*spd*UNIQ++,1.5*spd*UNIQ)]);
-			buffer.postFilters = [
-				new flash.filters.DisplacementMapFilter(displace, new flash.geom.Point(0,0), 1, 1, dispScale*13,dispScale*15, flash.filters.DisplacementMapFilterMode.WRAP, 0, 1)
-			];
-			var recal = dispScale<0.2 ? 0. : (dispScale-0.2)/0.8;
-			buffer.render.x = -13*recal;
-			buffer.render.y = -15*recal;
-		}
+
 
 		if( !fl_pause && !fl_ending ) {
 
+			// Follow path
 			var sx = 0.15;
 			var sy = 0.1;
-			#if debug
-				sx*=2.5;
-				sy*=2.5;
-			#end
+			// #if debug
+			// sx*=2.5;
+			// sy*=2.5;
+			// #end
 			if( playerPath.length>0 ) {
 				var t = playerPath[0];
-				if( player.cx<t.x ) player.dx = sx;
-				else if( player.cx>t.x ) player.dx = -sx;
-				else if( player.cy<t.y ) player.dy = sy;
-				else if( player.cy>t.y ) player.dy = -sy;
+				if( player.cx<t.cx ) player.dx = sx;
+				else if( player.cx>t.cx ) player.dx = -sx;
+				else if( player.cy<t.cy ) player.dy = sy;
+				else if( player.cy>t.cy ) player.dy = -sy;
 				else playerPath.shift();
 				if( player.dx==0 && player.dy==0 && playerPath.length==0 && onArrive!=null ) {
 					onArrive();
 					onArrive = null;
 					if( playerTarget!=null )
-						player.lookAt(playerTarget.x, playerTarget.y);
+						player.lookAt(playerTarget.cx, playerTarget.cy);
 					playerTarget = null;
 				}
 			}
+
+			// Center in cell
 			if( player.dx==0 && player.xr<0.5-sx)
 				player.dx = sx*1.25;
 			if( player.dx==0 && player.xr>0.5+sx)
@@ -1570,49 +1561,52 @@ class Game extends dn.Process {//}
 				player.dy = -sy;
 
 			if( player.dx==0 && player.dy==0 && playerPath.length==0 ) {
-				if( player.spr.isPlaying("walkUp") || player.spr.isPlaying("walkDown") ) {
+				// Stop walk anim
+				if( player.spr.anim.isPlaying("walkUp") || player.spr.anim.isPlaying("walkDown") ) {
 					footstep = 0;
 					if( player.dirY==-1 )
-						player.spr.playAnim("standUp");
+						player.spr.anim.play("standUp");
 					else
-						player.spr.playAnim("standDown");
+						player.spr.anim.play("standDown");
 				}
 			}
 			else {
+				// Foot steps sounds
 				footstep--;
 				if( footstep<=0 ) {
 					if( Std.random(3)==0 )
-						SOUNDS.footstep1(1);
+						Assets.SOUNDS.footstep1(1);
 					else
-						SOUNDS.footstep2(1);
+						Assets.SOUNDS.footstep2(1);
 					footstep = 6;
 				}
-				if( !player.spr.isPlaying("read") )
+				// Walk anim
+				if( !player.spr.anim.isPlaying("read") )
 					if( player.dirY==-1 )
-						player.spr.playAnim("walkUp");
+						player.spr.anim.play("walkUp");
 					else
-						player.spr.playAnim("walkDown");
+						player.spr.anim.play("walkDown");
 			}
-			//if( Key.isDown(Keyboard.LEFT) )
-				//player.dx = -s;
-			//if( Key.isDown(Keyboard.RIGHT) )
-				//player.dx = s;
-			//if( Key.isDown(Keyboard.UP) )
-				//player.dy = -s*0.7;
-			for(a in [LOOK, USE, OPEN, CLOSE, REMEMBER, PICK])
-				if( Key.isToggled(a.charCodeAt(0)) )
+
+			// Actions shortcuts
+			var idx = 0;
+			for(a in [LOOK, REMEMBER, USE, PICK, OPEN, CLOSE, HELP]) {
+				if( K.isPressed( a.charCodeAt(0) ) || K.isPressed(K.NUMBER_1+(idx++)) )
 					setPending(a);
-			//if( Key.isDown(Keyboard.DOWN) )
-				//player.dy = s*0.7;
+			}
+
 			if( room=="hell" && player.cx<=6 ) {
 				pop("!Lydia!!!");
 				setTrigger("letterPop");
-				afterPop = callback(changeRoom,"park");
+				afterPop = changeRoom.bind("park");
 			}
 
 			player.update();
-			DSprite.updateAll();
 		}
+
+	}
+	/*
+	function main(_) {
 
 		if( hasItem("finalLetter") )
 			DSprite.updateAll();
