@@ -131,8 +131,8 @@ class Game extends dn.Process {//}
 		player.spr.setCenterRatio(0.5, 0.95);
 		player.moveTo(10,5);
 		wrapper.add(player.spr, 5);
-		player.spr.anim.registerStateAnim("walkUp", 1, ()->player.dirY==-1 && player.isMoving && !fl_lockControls );
-		player.spr.anim.registerStateAnim("walkDown", 1, ()->player.dirY==1 && player.isMoving && !fl_lockControls );
+		player.spr.anim.registerStateAnim("walkUp", 1, ()->player.dirY==-1 && player.isMoving && !isGameLocked() );
+		player.spr.anim.registerStateAnim("walkDown", 1, ()->player.dirY==1 && player.isMoving && !isGameLocked() );
 		player.spr.anim.registerStateAnim("standDown", 0, ()->player.dirY==1);
 		player.spr.anim.registerStateAnim("standUp", 0, ()->player.dirY==-1);
 
@@ -360,6 +360,10 @@ class Game extends dn.Process {//}
 		lockControls(false);
 		if( curName!=null )
 			curName.visible = true;
+	}
+
+	inline function isGameLocked() {
+		return destroyed || fl_pause || fl_lockControls || fl_ending;
 	}
 
 	function lockControls(l) {
