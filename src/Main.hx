@@ -16,7 +16,7 @@ class Main extends dn.Process {
         createRoot(s);
 
 		// Engine settings
-		engine.backgroundColor = 0xff<<24|0x0;
+		engine.backgroundColor = 0xff<<24|Const.BG_COLOR;
         #if( hl && !debug )
         engine.fullScreen = true;
         #end

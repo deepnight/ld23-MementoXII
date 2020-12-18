@@ -83,7 +83,7 @@ class Game extends dn.Process {//}
 
 		createRoot(Main.ME.root);
 		ME = this;
-		new h2d.Bitmap( h2d.Tile.fromColor(#if debug 0x151515 #else 0x0 #end, Const.WID, Const.HEI), root );
+		new h2d.Bitmap( h2d.Tile.fromColor(#if debug 0x151515 #else Const.BG_COLOR #end, Const.WID, Const.HEI), root );
 
 		actions = new List();
 		fl_pause = false;
@@ -200,12 +200,12 @@ class Game extends dn.Process {//}
 			tf.alpha = 0.6;
 			addInteractive(tf, {
 				over: ()->{
-					if( !fl_lockControls )
-						tf.alpha = 1;
+					if( !fl_lockControls && tf.text!=pending )
+						tf.alpha = 0.7;
 				},
 				out: ()->{
 					if( tf.text!=pending )
-						tf.alpha = 0.6;
+						tf.alpha = 0.48;
 				},
 				click: ()->{
 					if( !fl_lockControls )
@@ -390,7 +390,7 @@ class Game extends dn.Process {//}
 	function setPending(?a:String) {
 		for( tf in actions ) {
 			tf.filter = null;
-			tf.alpha = 0.6;
+			tf.alpha = 0.48;
 		}
 
 		if( a==HELP ) {
@@ -400,7 +400,8 @@ class Game extends dn.Process {//}
 
 		if( a==ABOUT ) {
 			Assets.SOUNDS.select(1);
-			pop("This game was completely developed by Sebastien \"deepnight\" Benard in 48h for the Ludum Dare competition (theme: \"Tiny World\").");
+			pop("@This game was made by Sebastien \"deepnight\" Benard in 48h for the Ludum Dare 23 game jam (theme: \"Tiny World\").");
+			pop("@The first version being in Flash, it was ported to WebGL and DirectX on December 2020.");
 			pop("@Visit DEEPNIGHT.NET for more games :)");
 			return;
 		}
@@ -414,7 +415,7 @@ class Game extends dn.Process {//}
 		for(tf in actions)
 			if( tf.text==a ) {
 				tf.alpha = 1;
-				tf.filter = new dn.heaps.filter.PixelOutline(0x5e6f93);
+				tf.filter = new dn.heaps.filter.PixelOutline(0x404b63);
 			}
 	}
 
@@ -505,7 +506,7 @@ class Game extends dn.Process {//}
 			var tf = makeText( name!=null ? name : "!!"+i+"!!" );
 			tf.textColor = 0x957E51;
 			invCont.addChild(tf);
-			addInteractive(tf, { click:()->pop("You don't need to select items in your inventory to use them. Just choose the USE action above.")});
+			addInteractive(tf, { click:()->pop("@You don't need to select items in your inventory to use them. Just choose the USE action above.")});
 			n++;
 		}
 
@@ -666,11 +667,11 @@ class Game extends dn.Process {//}
 			else {
 				addSpot(52,22,5,6, "A very old picture");
 				setSprite( Assets.tiles.h_get("framed") );
-				setAction(LOOK, "The picture is very old and damaged. The character on the picture is barely recognizable. A woman?");
+				setAction(LOOK, "The picture is very old and damaged. The character on the picture is barely recognizable.|A woman?|@You can use REMEMBER to recall important details about things around you.");
 				setAction(PICK, "No, this picture is in its place.");
 				setAction(REMEMBER, function() {
 					if( !hasTriggerSet("firstMemory") ) {
-						pop("The picture is very old and damaged. The character on the picture is barely recognizable. A woman?|...|Lydia?");
+						pop("The picture is very old and damaged. The character on the picture is barely recognizable. A woman?|...|!Lydia?");
 						afterPop = changeRoom.bind("kitchen");
 					}
 					else
@@ -744,9 +745,9 @@ class Game extends dn.Process {//}
 			}
 			if( !hasTrigger("sinkClean") ) {
 				setAction(PICK, "I need a tool or something.");
-				setAction(LOOK, "A basic sink with an old faucet.|!Something is blocking the sink hole.");
-				setAction(REMEMBER, "!I remember that SOMETHING felt in the hole.|...But what was it?");
-				setAction(OPEN, "!No, something is blocking the hole.");
+				setAction(LOOK, "A basic sink with an old faucet.|!Something is blocking the pipe.");
+				setAction(REMEMBER, "I remember something important felt in the pipe.|!...Wasn't it a KEY?");
+				setAction(OPEN, "!No, something is stuck inside the pipe.");
 			}
 			else {
 				if( !hasTrigger("sinkOpen") )
@@ -763,7 +764,10 @@ class Game extends dn.Process {//}
 				});
 			}
 			if( !hasTrigger("sinkOpen") )
-				setAction(USE, "I need to open the water first.");
+				if( !hasTrigger("sinkClean") )
+					setAction(USE, "!Something is stuck in the pipe: I need a tool or something.");
+				else
+					setAction(USE, "I need to open the water first.");
 			if( hasTrigger("sinkClean") && hasTrigger("sinkOpen") ) {
 				if( hasItem("cupKey") && !hasTrigger("washedKey") )
 					setAction(USE, function() {
@@ -1119,16 +1123,15 @@ class Game extends dn.Process {//}
 
 	function getTip() {
 		Assets.SOUNDS.help(1);
-		if( !hasTriggerSet("usedTip") ) {
-			pop("You can use this option to get help if you are stuck in the game.");
-			pop("!From now on, every time you'll click on HELP, you will get a tip for current situation.");
-		}
+		if( !hasTriggerSet("usedTip") )
+			pop("@This action will provide some useful tips if you get stuck in the game.");
+
 		if( !hasTrigger("framed") && !hasItem("picture") )
 			pop("You should first concentrate on finding the 3 photo fragments.");
 		else if( EXTENDED && !hasTrigger("framed") && hasItem("picture") )
-			pop("Put the photograph back in its frame. To do this, select USE and click on the EMPTY FRAME (you never need to click on the inventory).");
+			pop("Put the photograph back in its frame.|!To do this, select USE, then click on the EMPTY FRAME (you never need to click on the inventory).");
 		else if( !hasTrigger("goKitchen") )
-			pop("You can sometime use REMEMBER on things to dive in past memories.");
+			pop("You can use REMEMBER on things to dive in past memories, or get important story details.");
 		else if( !hasTrigger("rememberTable") )
 			pop("You should check the table in the kitchen...");
 		else if( !hasTrigger("foundRing") )
