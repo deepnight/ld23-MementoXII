@@ -9,7 +9,18 @@ class Game extends dn.Process {//}
 	public static var ME : Game;
 
 	static var SHOW_COLLISIONS = false;
-	static var INAMES = new Map();
+	static var INAMES : Map<String,String> = [
+		"picture" => "Old picture",
+		"picPart1" => "Ripped photo (1/3)",
+		"picPart2" => "Ripped photo (2/3)",
+		"picPart3" => "Ripped photo (3/3)",
+		"chestKey" => "Small copper key",
+		"knife" => "Blunt knife",
+		"ring" => "Wedding ring",
+		"cupKey" => "Large iron key",
+		"broom" => "Broom",
+		"finalLetter" => "A letter",
+	];
 	static var EXTENDED = true;
 
 	static final LOOK = "Look";
@@ -87,33 +98,23 @@ class Game extends dn.Process {//}
 
 		pathFinder = new dn.pathfinder.AStar( (x,y)->{ cx:x, cy:y } );
 
-		INAMES.set("picture", "Old photograph");
-		INAMES.set("picPart1", "Ripped photo (1/3)");
-		INAMES.set("picPart2", "Ripped photo (2/3)");
-		INAMES.set("picPart3", "Ripped photo (3/3)");
-		INAMES.set("chestKey", "Small copper key");
-		INAMES.set("knife", "Blunt knife");
-		INAMES.set("ring", "Wedding ring");
-		INAMES.set("cupKey", "Large iron key");
-		INAMES.set("broom", "Broom");
-		INAMES.set("finalLetter", "A letter");
-
 		room = "cell";
-		#if debug
-		room = "park";
-		//inventory.add("picPart1");
-		triggers.set("phoneDropped",1);
-		triggers.set("letterPop",1);
-		//triggers.set("sinkClean",1);
-		//inventory.add("broom");
-		//inventory.add("knife");
-		inventory.add("ring");
-		inventory.add("chestKey");
-		triggers.set("framed",1);
-		triggers.set("foundChest",1);
-		//triggers.set("sinkClean",1);
-		//triggers.set("sinkOpen",1);
-		#end
+
+		// #if debug
+		// room = "park";
+		// //inventory.add("picPart1");
+		// triggers.set("phoneDropped",1);
+		// triggers.set("letterPop",1);
+		// //triggers.set("sinkClean",1);
+		// //inventory.add("broom");
+		// //inventory.add("knife");
+		// inventory.add("ring");
+		// inventory.add("chestKey");
+		// triggers.set("framed",1);
+		// triggers.set("foundChest",1);
+		// //triggers.set("sinkClean",1);
+		// //triggers.set("sinkOpen",1);
+		// #end
 
 		wrapper = new h2d.Layers(root);
 		wrapper.x = Std.int( Const.WID*0.5 - Const.GAMEZONE_WID*0.5 );
@@ -138,10 +139,12 @@ class Game extends dn.Process {//}
 		invSep1 = Assets.tiles.h_get("separator", 0);
 		wrapper.add(invSep1, 3);
 		invSep1.setCenterRatio(0,0.7);
+		invSep1.alpha = 0;
 
 		invSep2 = Assets.tiles.h_get("separator", 1);
 		wrapper.add(invSep2, 3);
 		invSep2.setCenterRatio(0,0.3);
+		invSep2.alpha = 0;
 
 
 		Boot.ME.s2d.addEventListener(onEvent);
@@ -485,13 +488,13 @@ class Game extends dn.Process {//}
 		invCont.x = 2;
 		invCont.y = 132;
 		invCont.minWidth = Const.GAMEZONE_WID;
-		invCont.minHeight = 12;
+		invCont.minHeight = 4;
 		invCont.horizontalAlign = Middle;
 		invCont.verticalSpacing = 1;
 		invCont.alpha = old;
 		wrapper.add(invCont, 1);
 
-		var a = if( inventory.length==0 ) 0.3 else 1;
+		var a = if( inventory.length==0 ) 0 else 1;
 		tw.createMs(invCont.alpha, a);
 		tw.createMs(invSep1.alpha, a);
 		tw.createMs(invSep2.alpha, a);
@@ -502,6 +505,7 @@ class Game extends dn.Process {//}
 			var tf = makeText( name!=null ? name : "!!"+i+"!!" );
 			tf.textColor = 0x957E51;
 			invCont.addChild(tf);
+			addInteractive(tf, { click:()->pop("You don't need to select items in your inventory to use them. Just choose the USE action above.")});
 			n++;
 		}
 
@@ -634,7 +638,7 @@ class Game extends dn.Process {//}
 			setAction(USE, "I don't have anything to write on.");
 
 			if( !hasItem("picPart1") && !hasTrigger("gotPicture") ) {
-				addSpot(57,24,6,7, "A torn photograph");
+				addSpot(57,24,6,7, "A ripped pîcture");
 				setSprite( Assets.tiles.h_get("picPart1") );
 				setAction(LOOK, "An old picture, totally torn...");
 				setAction(REMEMBER, "I don't remember anything about this picture... I should look for the other parts.");
@@ -648,25 +652,25 @@ class Game extends dn.Process {//}
 				addSpot(52,22,5,6, "Empty frame");
 				if( hasTrigger("gotPicture") )
 					setAction(USE, function() {
-						pop("You put the photograph back in its frame. It fits perfectly.");
+						pop("You put the picture back in its frame. It fits perfectly.");
 						setTrigger("framed");
 						Assets.SOUNDS.success(1);
 						removeItem("picture");
 					});
 				else
 					setAction(USE, "I don't have anything to put inside.");
-				setAction(LOOK, "This frame is empty.|!Hmm... Where is the photograph?");
+				setAction(LOOK, "This frame is empty.|!Hmm... Where is the picture?");
 				setAction(REMEMBER, "I can't remember if I removed the frame content myself...");
 				setAction(OPEN, "Nothing inside.");
 			}
 			else {
-				addSpot(52,22,5,6, "A very old photograph");
+				addSpot(52,22,5,6, "A very old picture");
 				setSprite( Assets.tiles.h_get("framed") );
-				setAction(LOOK, "The photograph is very old and damaged. The character on the picture is barely recognizable. A woman?");
+				setAction(LOOK, "The picture is very old and damaged. The character on the picture is barely recognizable. A woman?");
 				setAction(PICK, "No, this picture is in its place.");
 				setAction(REMEMBER, function() {
 					if( !hasTriggerSet("firstMemory") ) {
-						pop("The photograph is very old and damaged. The character on the picture is barely recognizable. A woman?|...|Lydia?");
+						pop("The picture is very old and damaged. The character on the picture is barely recognizable. A woman?|...|Lydia?");
 						afterPop = changeRoom.bind("kitchen");
 					}
 					else
@@ -701,7 +705,7 @@ class Game extends dn.Process {//}
 				addSpot(37,20,8,9, "Hidden hole");
 				if( !hasItem("picPart2") && !hasTrigger("gotPicture")  )
 					setAction(LOOK, function() {
-						pop("You found the fragment of a torn photograph.");
+						pop("You found the fragment of a ripped picture.");
 						addItem("picPart2");
 					});
 				else
@@ -718,10 +722,10 @@ class Game extends dn.Process {//}
 			if( !hasItem("picPart3") && !hasTrigger("gotPicture") ) {
 				addSpot(88,25,5,6, "Some sort of paper");
 				setSprite( Assets.tiles.h_get("picPart3") );
-				setAction(LOOK, "The fragment of a torn photograph is hidden under the bolster.");
+				setAction(LOOK, "The fragment of a ripped picture is hidden under the bolster.");
 				setAction(REMEMBER, "How did it get there?");
 				setAction(PICK, function() {
-					pop("It's a fragment of a torn photograph.");
+					pop("It's a fragment of a ripped picture.");
 					addItem("picPart3");
 				});
 			}
@@ -786,7 +790,7 @@ class Game extends dn.Process {//}
 				setAction(REMEMBER, changeRoom.bind("park"));
 			}
 			else
-				setAction(REMEMBER, "I'm pretty sure it was not normally empty.|!But where is its content?");
+				setAction(REMEMBER, "I'm pretty sure it was not normally empty.|There is a thin slot in a soft cushion inside of the box.|!But what should go in there?");
 			if( !hasTrigger("ringBack") )
 				setAction(LOOK, "It looks like some kind of jewel case. It is empty.");
 			else
