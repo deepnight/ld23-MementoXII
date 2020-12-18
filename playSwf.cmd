@@ -1,3 +1,3 @@
 @echo off
-cd flashRedist
-start play ld23.swf
+cd flashOriginal
+start flashProjector.bin client.swf
