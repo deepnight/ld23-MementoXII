@@ -4,10 +4,10 @@ class Main extends dn.Process {
 	var overlay : dn.heaps.filter.OverlayTexture;
 
 	/** Used to create "Access" instances that allow controller checks (keyboard or gamepad) **/
-	public var controller : dn.heaps.Controller;
+	public var controller : dn.legacy.Controller;
 
 	/** Controller Access created for Main & Boot **/
-	public var ca : dn.heaps.Controller.ControllerAccess;
+	public var ca : dn.legacy.Controller.ControllerAccess;
 
 	public function new(s:h2d.Scene) {
 		super();
@@ -33,7 +33,7 @@ class Main extends dn.Process {
 		Assets.init();
 
 		// Game controller & default key bindings
-		controller = new dn.heaps.Controller(s);
+		controller = new dn.legacy.Controller(s);
 		ca = controller.createAccess("main");
 		// controller.bind(AXIS_LEFT_X_NEG, Key.LEFT, Key.Q, Key.A);
 		// controller.bind(AXIS_LEFT_X_POS, Key.RIGHT, Key.D);
@@ -62,8 +62,8 @@ class Main extends dn.Process {
 
 	override function onResize() {
 		super.onResize();
-		Const.SCALE = Std.int( dn.heaps.Scaler.bestFit(Const.WID, Const.HEI, true) );
-		overlay.bevelSize = Const.SCALE;
+		Const.SCALE = dn.heaps.Scaler.bestFit_i(Const.WID, Const.HEI);
+		overlay.size = Const.SCALE;
 	}
 
 	/** Start game process **/

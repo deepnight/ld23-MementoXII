@@ -1,7 +1,7 @@
 class Assets {
 	public static var tiles : SpriteLib;
 	public static var font : h2d.Font;
-	public static var SOUNDS = dn.heaps.assets.SfxDirectory.load("sfx");
+	public static var SOUNDS = dn.heaps.assets.SfxDirectory.load("sfx",true);
 
 	public static function init() {
 		var t = hxd.Res.tiles.toTile();
