@@ -22,7 +22,7 @@
     {
       "text": "Redist",
       "color": "yellow",
-      "command": "haxelib run redistHelper hl.hxml js.hxml -p MementoXII",
+      "command": "haxelib run redistHelper hl.hxml js.hxml -p MementoXII -zip",
       "alignment": "right",
       "skipTerminateQuickPick": false,
       "priority": 0
