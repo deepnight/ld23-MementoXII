@@ -33,7 +33,7 @@ class DistortFilter extends h2d.filter.Shader<InternalShader> {
 			var bd = new hxd.BitmapData(32,32);
 			for(x in 0...bd.width)
 			for(y in 0...bd.height)
-				bd.setPixel(x,y, dn.Color.randomColor());
+				bd.setPixel(x,y, dn.legacy.Color.randomColor());
 			shader.noiseTex = h3d.mat.Texture.fromBitmap(bd);
 			bd.dispose();
 		}
