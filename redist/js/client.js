@@ -1707,12 +1707,6 @@ dn_Process.prototype = {
 			return false;
 		}
 	}
-	,pause: function() {
-		this._manuallyPaused = true;
-	}
-	,resume: function() {
-		this._manuallyPaused = false;
-	}
 	,addChild: function(p) {
 		if(p.parent == null) {
 			dn_Process.ROOTS.remove(p);
@@ -4651,7 +4645,6 @@ var Main = function(s) {
 	Assets.init();
 	this.controller = new dn_legacy_Controller(s);
 	this.ca = this.controller.createAccess("main");
-	new dn_heaps_GameFocusHelper(Boot.ME.s2d,Assets.font);
 	this.overlay = new dn_heaps_filter_OverlayTexture(dn_heaps_filter_OverlayTextureStyle.Classic,Const.SCALE);
 	this.overlay.get_shader().alpha__ = 0.3;
 	Boot.ME.s2d.set_filter(this.overlay);
@@ -5364,17 +5357,6 @@ dn_Cooldown.prototype = {
 	,toString: function() {
 		return "Cooldowns(" + this.cds.nalloc + "/" + this.cds.size + ")";
 	}
-	,_getCdObject: function(k) {
-		var _g_rpool = this.cds;
-		var _g_i = 0;
-		while(_g_i < _g_rpool.nalloc) {
-			var cd = _g_rpool.pool[_g_i++];
-			if(cd.k == k) {
-				return cd;
-			}
-		}
-		return null;
-	}
 	,update: function(tmod) {
 		var i = 0;
 		var cd;
@@ -5891,220 +5873,6 @@ dn_data_PoEntry.prototype = {
 	}
 	,__class__: dn_data_PoEntry
 };
-var dn_heaps_GameFocusHelper = function(s,font,thumb) {
-	this.jsFocus = false;
-	this.showIntro = false;
-	this.suspended = false;
-	var _gthis = this;
-	dn_Process.call(this);
-	this.thumb = thumb;
-	this.font = font;
-	this.scene = s;
-	this.createRoot(this.scene);
-	this.root.set_visible(false);
-	this.showIntro = true;
-	this.suspendGame();
-	var doc = window.document;
-	var _checkTouch = function(ev) {
-		var jsCanvas = hxd_Window.getInstance().canvas;
-		var te = ev.target;
-		_gthis.jsFocus = jsCanvas.isSameNode(te);
-	};
-	doc.addEventListener("touchstart",_checkTouch);
-	doc.addEventListener("click",_checkTouch);
-};
-$hxClasses["dn.heaps.GameFocusHelper"] = dn_heaps_GameFocusHelper;
-dn_heaps_GameFocusHelper.__name__ = "dn.heaps.GameFocusHelper";
-dn_heaps_GameFocusHelper.__super__ = dn_Process;
-dn_heaps_GameFocusHelper.prototype = $extend(dn_Process.prototype,{
-	suspendGame: function() {
-		var _gthis = this;
-		if(this.suspended) {
-			return;
-		}
-		this.suspended = true;
-		dn_heaps_slib_SpriteLib.DISABLE_ANIM_UPDATES = true;
-		var _g_arr = dn_Process.ROOTS;
-		var _g_i = 0;
-		while(_g_i < _g_arr.nalloc) {
-			var p = _g_arr.values[_g_i++];
-			if(p != this) {
-				p.pause();
-			}
-		}
-		this.root.set_visible(true);
-		this.root.removeChildren();
-		var isThumb = this.showIntro && this.thumb != null;
-		var t = this.showIntro && this.thumb == null ? h2d_Tile.fromColor(2436675,1,1,1) : this.showIntro && this.thumb != null ? this.thumb : h2d_Tile.fromColor(0,1,1,0.6);
-		var bg = new h2d_Bitmap(t,this.root);
-		var i = new h2d_Interactive(1,1,this.root);
-		var tf = new h2d_Text(this.font,this.root);
-		if(this.showIntro) {
-			tf.set_text("Click anywhere to start");
-		} else {
-			tf.set_text("PAUSED - click anywhere to resume");
-		}
-		this.createChildProcess(function(c) {
-			var y = Math.floor((dn_Process.CUSTOM_STAGE_WIDTH > 0 ? dn_Process.CUSTOM_STAGE_WIDTH : hxd_Window.getInstance().get_width()) * 0.5 / tf.get_textWidth());
-			var v = 1 > y ? 1 : y;
-			tf.posChanged = true;
-			tf.scaleX = v;
-			tf.posChanged = true;
-			tf.scaleY = v;
-			var v = (dn_Process.CUSTOM_STAGE_WIDTH > 0 ? dn_Process.CUSTOM_STAGE_WIDTH : hxd_Window.getInstance().get_width()) * 0.5 - tf.get_textWidth() * tf.scaleX * 0.5 | 0;
-			tf.posChanged = true;
-			tf.x = v;
-			var v = (dn_Process.CUSTOM_STAGE_HEIGHT > 0 ? dn_Process.CUSTOM_STAGE_HEIGHT : hxd_Window.getInstance().get_height()) * 0.5 - tf.get_textHeight() * tf.scaleY * 0.5 | 0;
-			tf.posChanged = true;
-			tf.y = v;
-			var tmp = dn_Process.CUSTOM_STAGE_WIDTH > 0 ? dn_Process.CUSTOM_STAGE_WIDTH : hxd_Window.getInstance().get_width();
-			i.width = tmp + 1;
-			var tmp = dn_Process.CUSTOM_STAGE_HEIGHT > 0 ? dn_Process.CUSTOM_STAGE_HEIGHT : hxd_Window.getInstance().get_height();
-			i.height = tmp + 1;
-			if(isThumb) {
-				var x = (dn_Process.CUSTOM_STAGE_WIDTH > 0 ? dn_Process.CUSTOM_STAGE_WIDTH : hxd_Window.getInstance().get_width()) / _gthis.thumb.width;
-				var y = (dn_Process.CUSTOM_STAGE_HEIGHT > 0 ? dn_Process.CUSTOM_STAGE_HEIGHT : hxd_Window.getInstance().get_height()) / _gthis.thumb.height;
-				var s = x > y ? x : y;
-				bg.set_filter(new h2d_filter_Blur(32,1,3));
-				bg.posChanged = true;
-				bg.scaleX = s;
-				bg.posChanged = true;
-				bg.scaleY = s;
-				var v = (dn_Process.CUSTOM_STAGE_WIDTH > 0 ? dn_Process.CUSTOM_STAGE_WIDTH : hxd_Window.getInstance().get_width()) * 0.5 - bg.tile.width * bg.scaleX * 0.5;
-				bg.posChanged = true;
-				bg.x = v;
-				var v = (dn_Process.CUSTOM_STAGE_HEIGHT > 0 ? dn_Process.CUSTOM_STAGE_HEIGHT : hxd_Window.getInstance().get_height()) * 0.5 - bg.tile.height * bg.scaleY * 0.5;
-				bg.posChanged = true;
-				bg.y = v;
-			} else {
-				var v = dn_Process.CUSTOM_STAGE_WIDTH > 0 ? dn_Process.CUSTOM_STAGE_WIDTH : hxd_Window.getInstance().get_width();
-				bg.posChanged = true;
-				bg.scaleX = v + 1;
-				var v = dn_Process.CUSTOM_STAGE_HEIGHT > 0 ? dn_Process.CUSTOM_STAGE_HEIGHT : hxd_Window.getInstance().get_height();
-				bg.posChanged = true;
-				bg.scaleY = v + 1;
-			}
-			if(!_gthis.suspended) {
-				c.destroyed = true;
-			}
-		},null,true);
-		var loadingMsg = this.showIntro;
-		i.onPush = function(_) {
-			if(loadingMsg) {
-				tf.set_text("Loading, please wait...");
-				var v = (dn_Process.CUSTOM_STAGE_WIDTH > 0 ? dn_Process.CUSTOM_STAGE_WIDTH : hxd_Window.getInstance().get_width()) * 0.5 - tf.get_textWidth() * tf.scaleX * 0.5 | 0;
-				tf.posChanged = true;
-				tf.x = v;
-				var v = (dn_Process.CUSTOM_STAGE_HEIGHT > 0 ? dn_Process.CUSTOM_STAGE_HEIGHT : hxd_Window.getInstance().get_height()) * 0.5 - tf.get_textHeight() * tf.scaleY * 0.5 | 0;
-				tf.posChanged = true;
-				tf.y = v;
-				_gthis.delayer.addS(null,$bind(_gthis,_gthis.resumeGame),1);
-			} else {
-				_gthis.resumeGame();
-			}
-			if(i != null && i.parent != null) {
-				i.parent.removeChild(i);
-			}
-		};
-		this.showIntro = false;
-	}
-	,resumeGame: function() {
-		var _gthis = this;
-		if(!this.suspended) {
-			return;
-		}
-		dn_heaps_slib_SpriteLib.DISABLE_ANIM_UPDATES = false;
-		this.delayer.addF(null,function() {
-			_gthis.root.set_visible(false);
-			_gthis.root.removeChildren();
-		},1);
-		this.suspended = false;
-		var _g_arr = dn_Process.ROOTS;
-		var _g_i = 0;
-		while(_g_i < _g_arr.nalloc) {
-			var p = _g_arr.values[_g_i++];
-			if(p != this) {
-				p.resume();
-			}
-		}
-	}
-	,update: function() {
-		dn_Process.prototype.update.call(this);
-		if(this.suspended) {
-			this.scene.over(this.root);
-		}
-		var _this = this.cd;
-		var frames = 0.2 * this.cd.baseFps;
-		var tmp;
-		if(_this.fastCheck.h.hasOwnProperty(20971520)) {
-			tmp = true;
-		} else {
-			var onComplete = null;
-			var cur = _this._getCdObject(20971520);
-			if(!(cur != null && frames < cur.frames && false)) {
-				if(frames <= 0) {
-					if(cur != null) {
-						_this.fastCheck.remove(cur.k);
-						var _this1 = _this.cds;
-						var _g = 0;
-						var _g1 = _this1.nalloc;
-						while(_g < _g1) {
-							var i = _g++;
-							if(_this1.pool[i] == cur) {
-								if(i >= 0 && i < _this1.nalloc) {
-									if(_this1.nalloc > 1) {
-										var tmp1 = _this1.pool[i];
-										_this1.pool[i] = _this1.pool[_this1.nalloc - 1];
-										_this1.pool[_this1.nalloc - 1] = tmp1;
-										_this1.nalloc--;
-									} else {
-										_this1.nalloc = 0;
-									}
-								}
-								break;
-							}
-						}
-					}
-				} else {
-					_this.fastCheck.h[20971520] = true;
-					if(cur != null) {
-						cur.frames = frames;
-						cur.initial = frames;
-					} else {
-						var _this1 = _this.cds;
-						if(_this1.nalloc >= _this1.size) {
-							throw haxe_Exception.thrown("RecyclablePool limit reached (" + _this1.size + ")");
-						}
-						var e = _this1.pool[_this1.nalloc++];
-						e.recycle();
-						var cd = e;
-						cd.k = 20971520;
-						cd.frames = frames;
-						cd.initial = frames;
-					}
-				}
-				if(onComplete != null) {
-					if(frames <= 0) {
-						onComplete();
-					} else {
-						var cd = _this._getCdObject(20971520);
-						if(cd == null) {
-							throw haxe_Exception.thrown("cannot bind onComplete(" + 20971520 + "): cooldown " + 20971520 + " isn't running");
-						}
-						cd.onCompleteOnce = onComplete;
-					}
-				}
-			}
-			tmp = false;
-		}
-		if(!tmp) {
-			if(!this.jsFocus && !this.suspended) {
-				this.suspendGame();
-			}
-		}
-	}
-	,__class__: dn_heaps_GameFocusHelper
-});
 var dn_heaps_Scaler = function() { };
 $hxClasses["dn.heaps.Scaler"] = dn_heaps_Scaler;
 dn_heaps_Scaler.__name__ = "dn.heaps.Scaler";
@@ -15782,35 +15550,6 @@ h2d_Layers.prototype = $extend(h2d_Object.prototype,{
 					this.parentContainer.contentChanged(this);
 				}
 				break;
-			}
-		}
-	}
-	,over: function(s) {
-		var _g = 0;
-		var _g1 = this.children.length;
-		while(_g < _g1) {
-			var i = _g++;
-			if(this.children[i] == s) {
-				var _g2 = 0;
-				var _g3 = this.layersIndexes;
-				while(_g2 < _g3.length) {
-					var l = _g3[_g2];
-					++_g2;
-					if(l > i) {
-						var _g4 = i;
-						var _g5 = l - 1;
-						while(_g4 < _g5) {
-							var p = _g4++;
-							this.children[p] = this.children[p + 1];
-						}
-						this.children[l - 1] = s;
-						if(s.allocated) {
-							s.onHierarchyMoved(false);
-						}
-						return;
-					}
-				}
-				return;
 			}
 		}
 	}
@@ -61852,7 +61591,7 @@ Xml.Comment = 3;
 Xml.DocType = 4;
 Xml.ProcessingInstruction = 5;
 Xml.Document = 6;
-dn_Cooldown.__meta__ = { obj : { indexes : ["test","jump","a","b","c","check"]}};
+dn_Cooldown.__meta__ = { obj : { indexes : ["test","jump","a","b","c"]}};
 dn_Cooldown.DEFAULT_COUNT_LIMIT = 512;
 dn_Tweenie.DEFAULT_DURATION = 1000.0;
 dn_data_GetText.VERBOSE = false;

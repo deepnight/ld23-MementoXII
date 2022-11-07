@@ -45,7 +45,7 @@ class Main extends dn.Process {
 
 		#if js
 		// Optional helper that shows a "Click to start/continue" message when the game looses focus
-		new dn.heaps.GameFocusHelper(Boot.ME.s2d, Assets.font);
+		// new dn.heaps.GameFocusHelper(Boot.ME.s2d, Assets.font);
 		#end
 
 		overlay = new dn.heaps.filter.OverlayTexture(Classic, Const.SCALE); // TODO scanlines 7%
